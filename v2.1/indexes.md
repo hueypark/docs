@@ -1,29 +1,41 @@
 ---
 title: Indexes
-summary: Indexes improve your database's performance by helping SQL locate data without having to look through every row of a table.
+summary: Indexes improve your database's performance by helping CockroachDB locate data without having to look through every row of a table.
 toc: true
 toc_not_nested: true
 ---
 
-Indexes improve your database's performance by helping SQL locate data without
+Indexes improve your database's performance by helping CockroachDB locate data without
 having to look through every row of a table.
 
 ## How do indexes work?
 
-When you create an index, SQL "indexes" the columns you specify, which creates
-a copy of the columns and then sorts their values (without sorting the values
-in the table itself), storing this information along with a pointer to each
-row.
+When you create an index, CockroachDB "indexes" the columns you specify, which
+creates a copy of the columns and then sorts their values (without sorting the
+values in the table itself), storing this information along with a pointer to
+each row.
 
-After a column is indexed, SQL can easily filter the column using the index to look up the rows of the table that match, rather than scanning each row in the entire table one-by-one. On large tables, this greatly reduces the number of rows that must be read, executing queries orders of magnitude faster.
+After a column is indexed, CockroachDB can easily filter the column using the
+index to look up the rows of the table that match, rather than scanning each
+row in the entire table one-by-one. On large tables, this greatly reduces the
+number of rows that must be read, executing queries faster by potentially
+orders of magnitude.
 
-For example, if you index an `INT` column and then filter it <code>WHERE &lt;indexed column&gt; = 10</code>, SQL can use the index to find values that match. Without an index, SQL would have to evaluate _every_ row in the table checking each to see if the value in this column is equal to 10. This is known as a "full table scan", and it can be very bad for query performance.
+For example, if you index an `INT` column and then filter it <code>WHERE &lt;indexed column&gt; = 10</code>, CockroachDB can use the index to find values that match. Without an index, CockroachDB would have to evaluate _every_ row in the table checking each to see if the value in this column is equal to 10. This is known as a "full table scan", and it can be very bad for query performance.
 
 ### Creation
 
-Each table automatically has an index created called `primary`, which indexes either its [primary key](primary-key.html) or&mdash;if there is no primary key&mdash;a unique value for each row known as `rowid`. We recommend always defining a primary key that can be used by your application's queries. If your primary index can be used instead of a secondary index, it will provide better performance (for both reads and writes) than letting CockroachDB use `rowid`.
+Each table automatically has an index created called `primary`, which indexes
+either its [primary key](primary-key.html) or&mdash;if there is no primary
+key&mdash;a unique value for each row known as `rowid`. We recommend always
+defining a primary key that can be used by your application's queries. If your
+primary index can be used instead of a secondary index, it will provide better
+performance (for both reads and writes) than letting CockroachDB use `rowid`.
 
-The `primary` index helps to filter a table by its primary key but cannot help SQL to filter the table for every possible query. To get around this limitation, build secondary indexes to improve the performance of such queries. You can create them:
+The `primary` index helps to filter a table by the column (or prefix columns)
+in the key, but cannot help CockroachDB to filter the table for every possible
+query. To get around this limitation, build secondary indexes to improve the
+performance of such queries. You can create them:
 
 - At the same time as the table with the `INDEX` clause of [`CREATE TABLE`](create-table.html#create-a-table-with-secondary-and-inverted-indexes). In addition to explicitly defined indexes, CockroachDB automatically creates secondary indexes for columns with the [`UNIQUE` constraint](unique.html).
 - For existing tables with [`CREATE INDEX`](create-index.html).
@@ -33,11 +45,11 @@ To create the most useful secondary indexes, you should also check out our [best
 
 ### Selection
 
-Because each query can use only a single index, SQL chooses the index that it
-expects to scan the fewest rows (i.e., the fastest). For more detail, check out
-our blog post [Index Selection in
-CockroachDB](https://www.cockroachlabs.com/blog/index-selection-cockroachdb-2/),
-which shows how to use the
+Because each query can use only a single index, CockroachDB chooses the index
+that it predicts will be the fastest. For more detail, check out our blog post
+[Index Selection in
+CockroachDB](https://www.cockroachlabs.com/blog/index-selection-cockroachdb-2/)
+, which shows how to use the
 [`EXPLAIN`](https://www.cockroachlabs.com/docs/v19.1/explain.html) statement
 for a query to see which index is being used.
 
@@ -54,18 +66,18 @@ Tables are not locked during index creation thanks to CockroachDB's [schema chan
 ### Performance
 
 Indexes often create a trade-off: they can greatly improve the speed of reads,
-but often (and sometimes simultaneously) will slightly slow down write that
+but often (and sometimes simultaneously) will slightly slow down writes that
 include an indexed column, because new values have to be written for both the
 table _and_ the index.
 
-Here's how this works: First an `INSERT` is the simplest case. It will always
-be a bit slower for each additional index because, in addition to creating one
-or more rows for the table, each index will _also_ have to create a new index
-point for each new row in the table.
+Consider an `INSERT` command. It will always be a bit slower for each
+additional index on the table because, in addition to creating one or more rows
+for the table, each index will _also_ have to create a new index point for each
+new row.
 
-On the other hand, writes that require a lookup (such as `UPDATE` and `DELETE`
-statements that include a `WHERE` clause) don't just write; they also contain a
-lookup stage that an index can potentially make more efficient.
+On the other hand, writes that require a `WHERE` clause (such as `UPDATE` and
+`DELETE` statements) don't just write; they also contain a lookup stage that an
+index can potentially make more efficient.
 
 Note that, while both an `INSERT` and the write phase of a `DELETE` statement
 will always be slowed down a bit for each additional index on a table, an
@@ -73,6 +85,17 @@ will always be slowed down a bit for each additional index on a table, an
 actually updated.
 
 To maximize your indexes' performance, we recommend following a few [best practices](#best-practices).
+
+### Index Prefixes
+
+An important concept in indexes is the idea of a multi-column index, and which
+columns constitute a prefix. An index prefix consists of one or more columns
+taken from the left-hand side of the columns listed in the `CREATE INDEX`
+statement.  For example, if you have an index on
+`(last_name, first_name, timestamp)`, it has prefixes of `(last_name)` and
+`(last_name, first_name)` but _not_ `(timestamp)` or `(first_name, timestamp)` 
+. An index cannot be used to improve the efficiency of a query unless that
+query filters on a prefix of its columns.
 
 ## Best practices
 
@@ -95,22 +118,28 @@ guidelines to help you make the best choices:
 
 - Each table's [primary key](primary-key.html) (which we recommend always
   [defining explicitly](create-table.html#create-a-table-primary-key-defined))
-  is automatically indexed. The unique index it creates (called `primary`) can
-  never be modified by an `UPDATE` statement, nor can the primary key for a
-  table be changed. Choosing a primary key is a critical decision for every
-  table, with long-term consequences.
-- A query can only benefit from using one index (`primary` or secondary),
-  typically chosen by the optimizer.
-- When filtering by two or more columns in a query, efficiency of the query can
-  be increased by using an index on two or more columns.
-- Queries can benefit from an index if they filter a prefix of its columns,
-  even if they don't filter by the rest.
+  is automatically indexed. The primary index it creates can never be modified
+  by an `UPDATE` statement, nor can the primary key for a table be changed.
+  Moreover, the primary key determines how the rows of the table are
+  distributed and stored together in a
+  [range](architecture/overview.html#glossary). Choosing a primary key is a
+  critical design decision for every table, and it carries long-term
+  consequences.
+- A query of a table can benefit from at most _one_ secondary index, typically
+  chosen by the optimizer.
+- When filtering by two or more columns in a query, the efficiency of the query
+  can be increased by using an index on as many of those columns as possible.
+- Queries can benefit from an index in one of several ways:
+  - If all of the columns in the `WHERE` clause match the index columns (or a
+    prefix)
+  - If some of the columns in the `WHERE` clause match the index columns (or a
+    prefix)
 - Columns filtered in the `WHERE` clause with the equality operators (`=` or
   `IN`) should come first in the index, before those referenced with inequality
   operators (`<`, `>`).
 - Indexes of the same columns in different orders can produce different results for each query. For more information, see [our blog post on index selection](https://www.cockroachlabs.com/blog/index-selection-cockroachdb-2/)&mdash;specifically the section "Restricting the search space."
 
-#### Example: Leveraging One Index with Two Queries
+#### Example: Index prefixes
 
 Suppose you want to optimize two queries.
 
@@ -146,13 +175,13 @@ You can then use this single index to service both queries.
 > SELECT primary_phone_number FROM user_info WHERE first_name = 'Anne';
 ~~~
 
-This is because the query filters for a column, `first_name`, that is not a prefix of the index.
+This is because the query filters for a column, `first_name`, that is not a _prefix_ of the index.
 
 ### Covered queries
 
 In some cases, a query can be answered without touching the underlying table at all. This is called a "covered" query, and it will be performed in cases where the index has all of the information required of a query.
 
-#### Example: Covered Query
+#### Example: Covered query
 
 Consider the index created by:
 
