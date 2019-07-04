@@ -56,6 +56,24 @@
           return "stable";
         })();
 
+        var isLocale = function (d) {
+          return {{ site.locales | jsonify }}.indexOf(d) != 1
+        };
+
+        var pageLocale = (function () {
+          var pathComponents = location.pathname
+            .replace(baseUrl, '')
+            .replace(/^\//, '')
+            .split('/');
+          // The locale is the second directory component in the URL,
+          // if it exists.
+          if (pathComponents.length > 2 && isLocale(pathComponents[1])) {
+            return pathComponents[1];
+          }
+
+          return null
+        })();
+
         // Given a sidebar hierarchy (see _data/sidebar-data-v1.0.json
         // for an example), returns a jQuery <ul> element with the
         // following structure:
@@ -79,7 +97,11 @@
 
           var lis = items.map(function (item) {
             var urls = (item.urls || []).map(function (url) {
-              var url = url.replace("${VERSION}", pageVersion);
+              var version = pageVersion
+              if (pageLocale) {
+                version += "/" + pageLocale;
+              }
+              var url = url.replace("${VERSION}", version);
               // This condition makes it possible to use external
               // urls in the sidebar.
               if (!/^https?:/.test(url)) {
