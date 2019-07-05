@@ -1,6 +1,6 @@
 ---
-title: CockroachDB Docs
-summary: CockroachDB user documentation.
+title: 칵로치디비 문서
+summary: 칵로치디비 사용자 메뉴얼
 toc: true
 contribute: false
 build_for: [standard, managed]
@@ -8,121 +8,122 @@ cta: false
 ---
 
 {% if site.managed %}
-Managed CockroachDB is a fully hosted and fully managed service created and owned by Cockroach Labs that makes deploying, scaling, and managing CockroachDB effortless.
+관리형 칵로치디비는 칵로치 연구소가 만들고 소유한 완전히 호스팅되고 관리되는 서비스로, 칵로치디비를 손쉽게 배포, 확장 및 관리할 수 있습니다.
 
 {{site.data.alerts.callout_info}}
-These docs are a work in progress. Please reach out to [support.cockroachlabs.com](https://support.cockroachlabs.com) if you have questions not yet answered here.
+이 문서는 작업중입니다. 이 곳에서 해소되지 않는 궁금한 점이 있으면 support.cockroachlabs.com](https://support.cockroachlabs.com)으로 연락주십시오.
 {{site.data.alerts.end}}
 
-### Always-On Service
+### 언제나 서비스 중
 
-- Cloud vendor agnostic
-- Automatic data replication across 3+ data centers
-- Zero downtime migration between cloud providers
+- 클라우드 벤더에 대해 몰라도 됨 Cloud vendor agnostic
+- 3개 이상의 데이터 센터에 자동 데이터 복제
+- 클라우드 제공업체 간 이동시 마이그레이션 다운타임 없음
 
-### Operational Excellence
+### 운영 효율성
 
-- Automatic hardware provisioning, setup, and configuration
-- Automatic rolling upgrades
-- Automated daily backups and hourly incremental backups
+- 자동 하드웨어 프로비저닝, 셋업 및 설정
+- 자동 롤링 업데이트
+- 자동 일일 백업과 시간단위 증분 백업
 
-### Enterprise-Grade Security
+### 엔터프라이즈급 보안
 
-- TLS 1.2 for all connections
-- Single tenant clusters
-- SOC-2 Compliance (in process)
+- 모든 연결에 TLS 1.2 적용
+- 전용 클러스터
+- SOC-2 인증 (진행 중)
 
 {% else %}
 
-CockroachDB is the SQL database for building global, scalable cloud services that survive disasters.
+
+칵로치디비는 글로벌하고 스케일가능한 클라우드서비스를 구축할 수 있는, 재난으로부터 안전한 SQL 데이터베이스입니다.
 
 <div class="container">
   <div class="row display-flex">
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Get Started</p>
+      <p class="landing-column-title">시작하기</p>
       <div class="landing-column-content">
-        <p><a href="install-cockroachdb.html">Install CockroachDB</a></p>
-        <p><a href="start-a-local-cluster.html">Start a Local Cluster</a></p>
-        <p><a href="learn-cockroachdb-sql.html">Learn CockroachDB SQL</a></p>
-        <p><a href="build-an-app-with-cockroachdb.html">Build an App</a></p>
-        <p><a href="demo-fault-tolerance-and-recovery.html">Explore Capabilities</a></p>
+        <p><a href="install-cockroachdb.html">칵로치디비 설치</a></p>
+        <p><a href="start-a-local-cluster.html">로컬 클러스터 실행</a></p>
+        <p><a href="learn-cockroachdb-sql.html">칵로치디비 SQL 배우기</a></p>
+        <p><a href="build-an-app-with-cockroachdb.html">앱 빌드하기</a></p>
+        <p><a href="demo-fault-tolerance-and-recovery.html">기능 살펴보기</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Develop</p>
+      <p class="landing-column-title">개발하기</p>
       <div class="landing-column-content">
-        <p><a href="install-client-drivers.html">Client Drivers</a></p>
-        <p><a href="connection-parameters.html">Connection Parameters</a></p>
-        <p><a href="sql-statements.html">SQL Statements</a></p>
-        <p><a href="data-types.html">Data Types</a></p>
-        <p><a href="performance-best-practices-overview.html">SQL Best Practices</a></p>
+        <p><a href="install-client-drivers.html">클라이언트 드라이버</a></p>
+        <p><a href="connection-parameters.html">커넥션 매개변수</a></p>
+        <p><a href="sql-statements.html">SQL 문법</a></p>
+        <p><a href="data-types.html">데이터 타입</a></p>
+        <p><a href="performance-best-practices-overview.html">SQL 모범 사례</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Deploy</p>
+      <p class="landing-column-title">배포</p>
       <div class="landing-column-content">
-        <p><a href="recommended-production-settings.html">Production Checklist</a></p>
-        <p><a href="manual-deployment.html">Manual Deployment</a></p>
-        <p><a href="orchestration.html">Orchestration</a></p>
-        <p><a href="security-overview.html">Security</a></p>
-        <p><a href="upgrade-cockroach-version.html">Rolling Upgrade</a></p>
+        <p><a href="recommended-production-settings.html">프로덕션 체크리스트</a></p>
+        <p><a href="manual-deployment.html">수동 배포</a></p>
+        <p><a href="orchestration.html">오케스트레이션</a></p>
+        <p><a href="security-overview.html">보안</a></p>
+        <p><a href="upgrade-cockroach-version.html">롤링 업그레이드</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Migrate</p>
+      <p class="landing-column-title">마이그레이션</p>
       <div class="landing-column-content">
-        <p><a href="migration-overview.html">Overview</a></p>
-        <p><a href="migrate-from-postgres.html">Migrate from Postgres</a></p>
-        <p><a href="migrate-from-mysql.html">Migrate from MySQL</a></p>
-        <p><a href="migrate-from-csv.html">Migrate from CSV</a></p>
-        <p><a href="performance-best-practices-overview.html#multi-row-dml-best-practices">Insert Best Practices</a></p>
+        <p><a href="migration-overview.html">개요</a></p>
+        <p><a href="migrate-from-postgres.html">Postgres에서 마이그레이션</a></p>
+        <p><a href="migrate-from-mysql.html">MySQL에서 마이그레이션</a></p>
+        <p><a href="migrate-from-csv.html">CSV에서 마이그레이션</a></p>
+        <p><a href="performance-best-practices-overview.html#multi-row-dml-best-practices">삽입 모범 사례</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Troubleshoot</p>
+      <p class="landing-column-title">문제해결</p>
       <div class="landing-column-content">
-        <p><a href="common-errors.html">Overview</a></p>
-        <p><a href="common-errors.html">Common Errors</a></p>
-        <p><a href="cluster-setup-troubleshooting.html">Cluster Setup</a></p>
-        <p><a href="query-behavior-troubleshooting.html">Query Behavior</a></p>
-        <p><a href="support-resources.html">Support Resources</a></p>
+        <p><a href="common-errors.html">개요</a></p>
+        <p><a href="common-errors.html">일반적인 에러들</a></p>
+        <p><a href="cluster-setup-troubleshooting.html">클러스터 셋업</a></p>
+        <p><a href="query-behavior-troubleshooting.html">쿼리 동작방식</a></p>
+        <p><a href="support-resources.html">지원 리소스</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Reference</p>
+      <p class="landing-column-title">래퍼런스</p>
       <div class="landing-column-content">
         <p><a href="sql-feature-support.html">SQL</a></p>
         <p><a href="cockroach-commands.html">CLI</a></p>
-        <p><a href="cluster-settings.html">Cluster Settings</a></p>
-        <p><a href="admin-ui-overview.html">Admin UI</a></p>
-        <p><a href="third-party-database-tools.html">Third-Party Tools</a></p>
+        <p><a href="cluster-settings.html">클러스터 설정</a></p>
+        <p><a href="admin-ui-overview.html">운영 UI</a></p>
+        <p><a href="third-party-database-tools.html">써드파티 툴</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Learn More</p>
+      <p class="landing-column-title">더 배우기</p>
       <div class="landing-column-content">
-        <p><a href="training/">CockroachDB Training</a></p>      
-        <p><a href="architecture/overview.html">Architecture</a></p>
-        <p><a href="sql-feature-support.html">SQL Feature Support</a></p>
-        <p><a href="https://www.cockroachlabs.com/guides/">Whitepapers</a></p>
+        <p><a href="training/">칵로치디비 트레이닝</a></p>
+        <p><a href="architecture/overview.html">아키텍처</a></p>
+        <p><a href="sql-feature-support.html">SQL 기능 지원</a></p>
+        <p><a href="https://www.cockroachlabs.com/guides/">백서</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
       <p class="landing-column-title">FAQs</p>
       <div class="landing-column-content">
-        <p><a href="frequently-asked-questions.html">Product FAQs</a></p>
+        <p><a href="frequently-asked-questions.html">제품 FAQs</a></p>
         <p><a href="sql-faqs.html">SQL FAQs</a></p>
-        <p><a href="operational-faqs.html">Operational FAQs</a></p>
-        <p><a href="cockroachdb-in-comparison.html">DB Comparisons</a></p>
+        <p><a href="operational-faqs.html">운영 FAQs</a></p>
+        <p><a href="cockroachdb-in-comparison.html">데이터베이스 비교</a></p>
       </div>
     </div>
     <div class="col-xs-12 col-sm-6 col-lg-4">
-      <p class="landing-column-title">Releases</p>
+      <p class="landing-column-title">릴리즈</p>
       <div class="landing-column-content">
-        <p><a href="../releases/{{page.release_info.version}}.html">Latest Stable Release</a></p>
-        <p><a href="../releases/#production-releases">All Stable Releases</a></p>
-        <p><a href="../releases/#testing-releases">All Testing Releases</a></p>
-        <p><a href="known-limitations.html">Known Limitations</a></p>
+        <p><a href="../releases/{{page.release_info.version}}.html">마지막 스테이블 릴리즈</a></p>
+        <p><a href="../releases/#production-releases">모든 스테이블 릴리즈</a></p>
+        <p><a href="../releases/#testing-releases">모든 테스트 릴리즈</a></p>
+        <p><a href="known-limitations.html">알려진 제한사항</a></p>
       </div>
     </div>
   </div>
