@@ -14,3 +14,5 @@
 2. [이슈 목록](https://github.com/hueypark/docs/issues)에서 아직 번역되지 않은 문서를 확인 후 [댓글](https://github.com/hueypark/docs/issues/1#issuecomment-508903793)을 남기고 번역을 시작해 주십시오.
 
 3. 번역이 완료되면 [PR](https://github.com/hueypark/docs/pull/10)을 만들어 주십시오. PR과 관련된 이슈를 링크해 주는 것을 잊지 마십시오.
+
+4. 머지가 완료되면 [임시 한글화 문서 페이지](https://marsettler.com/docs/stable/ko/)에서 결과를 확인할 수 있습니다.
