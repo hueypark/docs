@@ -5,7 +5,7 @@
 
 ## 준비
 
-1. 먼저 칵로치디비에 [기여하는 방법](https://github.com/hueypark/docs/blob/master/CONTRIBUTING.md)을 확인해 로컬에서 문서를 확인해 
+1. 먼저 칵로치디비에 [기여하는 방법](https://github.com/hueypark/docs/blob/master/CONTRIBUTING.md)을 확인해 로컬에서 문서를 확인해 주십시오.
 
 ## 번역
 
