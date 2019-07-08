@@ -4,8 +4,8 @@
 | archive | 아카이브 | |
 | best practices | 모범사례 | |
 | cluster | 클러스터 | |
-| CockroachDB | 칵로치디비 | |
-| core | 코어 | 칵로치디비 오픈소스 코어를 말하는 경우 |
+| CockroachDB | 카크로치디비 | |
+| core | 코어 | 카크로치디비 오픈소스 코어를 말하는 경우 |
 | daemon | 데몬 | 서버 프로세스를 말하는 경우 |
 | Docker | 도커 | |
 | Docker Hub | 도커 허브 | |
