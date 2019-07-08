@@ -1,6 +1,6 @@
 ---
-title: 칵로치디비 문서
-summary: 칵로치디비 사용자 메뉴얼
+title: 카크로치디비 문서
+summary: 카크로치디비 사용자 메뉴얼
 toc: true
 contribute: false
 build_for: [standard, managed]
@@ -8,7 +8,7 @@ cta: false
 ---
 
 {% if site.managed %}
-관리형 칵로치디비는 칵로치 연구소가 만들고 소유한 완전히 호스팅되고 관리되는 서비스로, 칵로치디비를 손쉽게 배포, 확장 및 관리할 수 있습니다.
+관리형 카크로치디비는 카크로치 연구소가 만들고 소유한 완전히 호스팅되고 관리되는 서비스로, 카크로치디비를 손쉽게 배포, 확장 및 관리할 수 있습니다.
 
 {{site.data.alerts.callout_info}}
 이 문서는 작업중입니다. 이 곳에서 해소되지 않는 궁금한 점이 있으면 support.cockroachlabs.com](https://support.cockroachlabs.com)으로 연락주십시오.
@@ -35,16 +35,16 @@ cta: false
 {% else %}
 
 
-칵로치디비는 글로벌하고 스케일가능한 클라우드서비스를 구축할 수 있는, 재난으로부터 안전한 SQL 데이터베이스입니다.
+카크로치디비는 글로벌하고 스케일가능한 클라우드서비스를 구축할 수 있는, 재난으로부터 안전한 SQL 데이터베이스입니다.
 
 <div class="container">
   <div class="row display-flex">
     <div class="col-xs-12 col-sm-6 col-lg-4">
       <p class="landing-column-title">시작하기</p>
       <div class="landing-column-content">
-        <p><a href="install-cockroachdb.html">칵로치디비 설치</a></p>
+        <p><a href="install-cockroachdb.html">카크로치디비 설치</a></p>
         <p><a href="start-a-local-cluster.html">로컬 클러스터 실행</a></p>
-        <p><a href="learn-cockroachdb-sql.html">칵로치디비 SQL 배우기</a></p>
+        <p><a href="learn-cockroachdb-sql.html">카크로치디비 SQL 배우기</a></p>
         <p><a href="build-an-app-with-cockroachdb.html">앱 빌드하기</a></p>
         <p><a href="demo-fault-tolerance-and-recovery.html">기능 살펴보기</a></p>
       </div>
@@ -102,7 +102,7 @@ cta: false
     <div class="col-xs-12 col-sm-6 col-lg-4">
       <p class="landing-column-title">더 배우기</p>
       <div class="landing-column-content">
-        <p><a href="training/">칵로치디비 트레이닝</a></p>
+        <p><a href="training/">카크로치디비 트레이닝</a></p>
         <p><a href="architecture/overview.html">아키텍처</a></p>
         <p><a href="sql-feature-support.html">SQL 기능 지원</a></p>
         <p><a href="https://www.cockroachlabs.com/guides/">백서</a></p>
