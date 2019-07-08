@@ -1,15 +1,15 @@
 ---
-title: Why CockroachDB?
+title: 왜 카크로치디비인가?
 toc: false
 sidebar_data: sidebar-data-training.json
 redirect_from: /training/why-cockroachdb.html
 ---
 
-Kick off your training by watching Alex Robinson, a CockroachDB Engineer, explain the history of databases and why CockroachDB was built. You can also read through a related set of slides.
+카크로치디비 엔지니어인 알렉스 로빈슨의, 데이터베이스의 역사와 카크로치디비가 만들어진 이유를 통해 교율을 시작하십시오. 관련 슬라이드를 볼 수도 있습니다.
 
 <div class="filters clearfix">
-  <button style="width: 15%" class="filter-button" data-scope="video">Video</button>
-  <button style="width: 15%" class="filter-button" data-scope="slides">Slides</button>
+  <button style="width: 15%" class="filter-button" data-scope="video">비디오</button>
+  <button style="width: 15%" class="filter-button" data-scope="slides">슬라이드</button>
 </div>
 <p></p>
 
@@ -25,6 +25,6 @@ Kick off your training by watching Alex Robinson, a CockroachDB Engineer, explai
 
 </div>
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-[Architecture Overview](architecture-overview.html)
+[아키텍처 살펴보기] Overview](architecture-overview.html)

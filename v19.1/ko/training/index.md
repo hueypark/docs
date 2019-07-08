@@ -1,6 +1,6 @@
 ---
-title: CockroachDB Training
-summary: Learn how to use CockroachDB for your applications
+title: 카크로치디비 교육
+summary: 애플리케이션을 위해 카크로치디비를 사용하는 법을 배웁니다
 toc: false
 feedback: false
 sidebar_data: sidebar-data-training.json
@@ -13,15 +13,15 @@ redirect_from:
 
 <img src="{{ 'images/v19.1/CockroachDB_Training_Wide.png' | relative_url }}" class="cockroachdb-training" alt="CockroachDB training"/>
 
-This training introduces you to the fundamentals of CockroachDB, with an emphasis on:
+이 교육에서 카크로치디비의 다음에 중점을 두고 기초를 소개합니다:
 
-- **Understanding the architecture**
-- **Operational basics**
+- **아키텍처의 이해**
+- **기본 동작**
 
-The modules build on each other, so it's important to complete them in order. As you go, feel free to ask questions on our public [Gitter chat channel](https://gitter.im/cockroachdb/cockroach) or [support forum](https://forum.cockroachlabs.com/).
+모듈은 서로 의존하므로, 순서대로 완료해야 합니다. 진행하며 공개 [Gitter](https://gitter.im/cockroachdb/cockroach)나 [포럼](https://forum.cockroachlabs.com/)에 자유롭게 질문해 주십시오.
 
 <!-- Once you've finished, [let us know if you are interested in more detailed training](https://www.surveymonkey.com/r/5TGPWRJ) on deploying, monitoring, troubleshooting, and maintaining CockroachDB. -->
 
-## What's first?
+## 무엇으로부터 시작할까요?
 
-[Why CockroachDB?](why-cockroachdb.html)
+[왜 카크로치디비인가?](why-cockroachdb.html)

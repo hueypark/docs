@@ -1,16 +1,16 @@
 ---
-title: Architecture Overview
-summary: Learn more about CockroachDB's underlying architecture
+title: 아키텍처 살펴보기
+summary: 카크로치디비의 기반 아키텍처에 대해 좀 더 알아봅시다
 toc: false
 sidebar_data: sidebar-data-training.json
 redirect_from: /training/architecture-overview.html
 ---
 
-Watch the rest of Alex Robinson's talk, where he explains the CockroachDB architecture and how it was built. You can also read through a related set of slides.
+알렉스 로빈슨의 이야기의 나머지 부분인, 카크로치디비의 아키텍처와 이것이 어떻게 만들어졌는지를 살펴봅시다. 관련 슬라이드를 볼 수도 있습니다.
 
 <div class="filters clearfix">
-  <button style="width: 15%" class="filter-button" data-scope="video">Video</button>
-  <button style="width: 15%" class="filter-button" data-scope="slides">Slides</button>
+  <button style="width: 15%" class="filter-button" data-scope="video">비디오</button>
+  <button style="width: 15%" class="filter-button" data-scope="slides">슬라이드</button>
 </div>
 <p></p>
 
@@ -26,6 +26,6 @@ Watch the rest of Alex Robinson's talk, where he explains the CockroachDB archit
 
 </div>
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-[Cluster Startup and Scaling](cluster-startup-and-scaling.html)
+[클러스터 시작과 스케일링](cluster-startup-and-scaling.html)
