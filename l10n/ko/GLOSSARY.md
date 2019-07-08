@@ -13,8 +13,9 @@
 | release | 릴리즈 | |
 | stateful | 스테이트풀 | 상태를 저장한다는 의미인 경우 |
 | Helm | 헬름 | [https://helm.sh/](https://helm.sh/)을 말하는 경우 |
+| local | 로컬 | 개발자 로컬 장비를 의미하는 경우 |
 | macOS | 맥OS | |
 | Minikube | 미니쿠베 | |
-| local | 로컬 | 개발자 로컬 장비를 의미하는 경우 |
 | package manager | 패키지 매니저 | |
+| production | 프로덕션 | 환경(개발, 테스트, 프로덕션과 같은)을 의미할 경우 |
 | What's next? | 무엇을 더 알아볼까요? | 문서에서 다음에 더 찾아볼 문서을 안내할 경우 |
