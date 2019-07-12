@@ -1,88 +1,90 @@
 ---
-title: Architecture Overview
-summary: An overview of the CockroachDB architecture.
+title: 아키텍처 개요
+summary: 카크로치디비 아키텍처의 개요입니다.
 toc: true
 key: cockroachdb-architecture.html
 redirect_from: index.html
 ---
 
-CockroachDB was designed to create the source-available database our developers would want to use: one that is both scalable and consistent. Developers often have questions about how we've achieved this, and this guide sets out to detail the inner-workings of the `cockroach` process as a means of explanation.
+카크로치디비는 스케일가능하고 일관성있는, 소스코드에 접근가능한 데이터베이스로 디자인되었습니다. 개발자는 종종 우리가 어떻게 이것을 달성했는지 질문하는데, 이 가이드는 `카크로치` 프로세스의 세부동작을 자세하게 설명합니다.
 
-However, you definitely do not need to understand the underlying architecture to use CockroachDB. These pages give serious users and database enthusiasts a high-level framework to explain what's happening under the hood.
+하지만, 카크로치디비를 사용하기 위해 기본 아키텍처를 이해할 필요는 없습니다. 이 페이지는 심층 사용자와 데이터베이스 애호가에게 내부에서 무슨 일이 일어나는지 설명합니다.
 
-## Using this guide
+## 가이드 사용법
 
-This guide is broken out into pages detailing each layer of CockroachDB. It's recommended to read through the layers sequentially, starting with this overview and then proceeding to the SQL layer.
+이 가이드는 카크로치디비의 각 계층을 자세히 설명하는 페이지로 나뉩니다. 순차적으로(개요에서 SQL 계층 순으로) 읽는 것이 좋습니다.
 
-If you're looking for a high-level understanding of CockroachDB, you can simply read the **Overview** section of each layer. For more technical detail––for example, if you're interested in [contributing to the project](../contribute-to-cockroachdb.html)––you should read the **Components** sections as well.
+카크로치디비에 대한 고수준의 이해를 원하면 각 계층의 **개요**를 읽으십시오. 더 기술적인 세부내용(예를 들어 [프로젝트에 기여](../contribute-to-cockroachdb.html) 하는 것에 관심이 있다면) 각 **구성요소**도 읽어야 합니다.
 
-{{site.data.alerts.callout_info}}This guide details how CockroachDB is built, but does not explain how <em>you</em> should architect an application using CockroachDB. For help with your own application's architecture using CockroachDB, check out our <a href="https://cockroachlabs.com/docs/stable">user documentation</a>.{{site.data.alerts.end}}
+{{site.data.alerts.callout_info}}이 가이드는 카크로치디비의 구조에 대해 자세히 설명하지만, <em>당신이</em> 카크로치디비를 사용하여 애플리케이션을 구성하는 방법에 대해서는 설명하지 않습니다. 카크로치디비를 사용한 애플리케이션 아키텍처에 대한 도움말을 모려면 <a href="https://cockroachlabs.com/docs/stable">사용자 문서</a>를 확인하십시오.{{site.data.alerts.end}}
 
-## Goals of CockroachDB
+This guide details how CockroachDB is built, but does not explain how <em>you</em> should architect an application using CockroachDB. For help with your own application's architecture using CockroachDB, check out our <a href="https://cockroachlabs.com/docs/stable">user documentation</a>.{{site.data.alerts.end}}
 
-CockroachDB was designed in service of the following goals:
+## 카크로치디비의 목적
 
-- Make life easier for humans. This means being low-touch and highly automated for operators and simple to reason about for developers.
-- Offer industry-leading consistency, even on massively scaled deployments. This means enabling distributed transactions, as well as removing the pain of eventual consistency issues and stale reads.
-- Create an always-on database that accepts reads and writes on all nodes without generating conflicts.
-- Allow flexible deployment in any environment, without tying you to any platform or vendor.
-- Support familiar tools for working with relational data (i.e., SQL).
+카크로치디비는 다음 목적을 달성하도록 디자인되었습니다:
 
-With the confluence of these features, we hope that CockroachDB lets teams easily build global, scalable, resilient cloud services.
+- 인간의 삶을 편하게 합니다. 운영자에게 적은 조작과 고도의 자동화를 제공하고, 개발자에게는 간단하고 합리적입니다.
+- 확장성이 뛰어남과 동시에 업계 최고의 일관성을 제공합니다. 분산 트랜잭션을 가능하게 하고 이벤츄얼 컨시스턴시와 스테일 리드로 인한 고통을 제거합니다.
+- 읽기와 쓰기가 모든 노드에서 충돌없이 가능한 언제나 동작하는 데이터베이스를 만듭니다.
+- 플랫폼이나 벤더 의존성 없이, 어떤 환경에서나 유연하게 배포가능합니다.
+- 관계형 데이터와 상호작용하는 익숙한 도구를 제공합니다.(예: SQL)
 
-## Glossary
+이러한 기능이 합쳐져, 카크로치디비를 통해 글로벌하고 확장 가능하며 탄력있는 클라우드 서비스를 손쉽게 구축하기를 바랍니다.
 
-### Terms
+## 용어
 
-It's helpful to understand a few terms before reading our architecture documentation.
+### 단어
+
+아키텍처 문서를 보기 전에 몇 가지 단어를 알아보면 도움이 됩니다.
 
 {% include {{ page.version.version }}/misc/basic-terms.md %}
 
-### Concepts
+### 개념
 
-CockroachDB heavily relies on the following concepts, so being familiar with them will help you understand what our architecture achieves.
+카크로치디비는 다음 개념에 크게 의존하므로, 익숙해지면 아키텍처 목표를 이해하는데 도움이 됩니다.
 
-Term | Definition
+단어 | 정의
 -----|-----------
-**Consistency** | CockroachDB uses "consistency" in both the sense of [ACID semantics](https://en.wikipedia.org/wiki/Consistency_(database_systems)) and the [CAP theorem](https://en.wikipedia.org/wiki/CAP_theorem), albeit less formally than either definition. What we try to express with this term is that your data should be anomaly-free.
-**Consensus** | When a range receives a write, a quorum of nodes containing replicas of the range acknowledge the write. This means your data is safely stored and a majority of nodes agree on the database's current state, even if some of the nodes are offline.<br/><br/>When a write *doesn't* achieve consensus, forward progress halts to maintain consistency within the cluster.
-**Replication** | Replication involves creating and distributing copies of data, as well as ensuring copies remain consistent. However, there are multiple types of replication: namely, synchronous and asynchronous.<br/><br/>Synchronous replication requires all writes to propagate to a quorum of copies of the data before being considered committed. To ensure consistency with your data, this is the kind of replication CockroachDB uses.<br/><br/>Asynchronous replication only requires a single node to receive the write to be considered committed; it's propagated to each copy of the data after the fact. This is more or less equivalent to "eventual consistency", which was popularized by NoSQL databases. This method of replication is likely to cause anomalies and loss of data.
-**Transactions** | A set of operations performed on your database that satisfy the requirements of [ACID semantics](https://en.wikipedia.org/wiki/Database_transaction). This is a crucial component for a consistent system to ensure developers can trust the data in their database.
-**Multi-Active Availability** | Our consensus-based notion of high availability that lets each node in the cluster handle reads and writes for a subset of the stored data (on a per-range basis). This is in contrast to active-passive replication, in which the active node receives 100% of request traffic, as well as active-active replication, in which all nodes accept requests but typically cannot guarantee that reads are both up-to-date and fast.
+**일관성** | 카크로치디비는 [ACID 개념](https://en.wikipedia.org/wiki/Consistency_(database_systems)) 과 [CAP 이론](https://en.wikipedia.org/wiki/CAP_theorem) 모두에 "일관성"을 사용합니다. 이 용어로 우리는 데이터에 이상현상이 없어야 한다는 것을 표현합니다.
+**합의** | 레인지가 쓰기를 받으면, 레플리카를 가진 노드 중 쿼럼이 쓰기를 확인합니다. 이는 데이터가 안전하게 저장되고 노드의 대다수가 데이터베이스의 현재 상태에 동의한다는 것을 의미합니다(노드의 일부가 오프라인이더라도).<br/><br/>만약 쓰기가 합의를 달성하지 *못하면* 클러스터 내에서 일관성을 유지하기 위해 추가진행이 중단됩니다.
+**복제** | 복제에는 데이터 사본을 만들고 배포하는 작업과, 사본의 일관성 유지 작업이 포함됩니다. 복제에는 동기와 비동기 유형이 있습니다.<br/><br/>동기식 복제에서는 커밋되기 전에 모든 쓰기가 데이터 복사본의 쿼럼으로 전파되어야 합니다. 데이터의 일관성을 유지하기 위해, 카크로치디비가 사용하는 복제 종류입니다.<br/><br/>비동기 복제는 커밋으로 가정하기 위해 단일 노드만을 확인합니다. 그 후에 데이터를 각 복사본에 전파합니다. 이것은 NoSQL 데이터베이스에 의해 대중화된 "이벤츄얼 컨시스턴시"와 유사합니다. 이 복제방법은 이상현상과 데이터 손실을 일으킬 수 있습니다.
+**트랜잭션** | 데이터베이스에 수행되는 일련의 작업은 [ACID 개념](https://en.wikipedia.org/wiki/Database_transaction)을 준수합니다. 이는 일관된 시스템의 핵심 구성요소로 개발자가 데이터베이스를 신뢰할 수 있게 합니다.
+**멀티-액티브 가용성** | 합의에 기반한 고가용성에 대한 개념으로 클러스트의 각 노드가 저장된 데이터의 하위 집합에 대해 읽기 및 쓰기를 처리하게 합니다(레인지 기반으로). 이는 액티브 노드가 트래픽의 100%를 처리하는, 액티브-패시브 복제나, 모든 노드가 요청을 수락하지만 일반적으로 읽기가 최신인지 보장할수 없는 액티브-액티브 복제와는 다른 방식입니다.
 
-## Overview
+## 개요
 
-CockroachDB starts running on machines with two commands:
+카크로치디비는 두가지 명령으로 장비에서 실행됩니다:
 
-- `cockroach start` with a `--join` flag for all of the initial nodes in the cluster, so the process knows all of the other machines it can communicate with
-- `cockroach init` to perform a one-time initialization of the cluster
+- `cockroach start` 명령어의 `--join` 플래그로 클러스터의 모든 초기 노드를 지정하여, 프로세스가 모든 다른 장비를 알고 통신하며
+- `cockroach init` 는 한 번에 클러스터를 초기화합니다
 
-Once the `cockroach` process is running, developers interact with CockroachDB through a SQL API, which we've modeled after PostgreSQL. Thanks to the symmetrical behavior of all nodes, you can send SQL requests to any of them; this makes CockroachDB really easy to integrate with load balancers.
+`카크로치` 프로세스가 실행되면, 개발자는 SQL API(PostgreSQL과 동일한)를 통해 카크로치디비를 사용할 수 있습니다. 모든 노드가 동일하게 동작하기 때문에 어떤 노드에라도 SQL 요청을 보낼수 있습니다; 이로 인해 카크로치디비는 로드 밸런서와 쉽게 통합됩니다.
 
-After receiving SQL RPCs, nodes convert them into operations that work with our distributed key-value store. As these RPCs start filling your cluster with data, CockroachDB algorithmically starts distributing your data among your nodes, breaking the data up into 64MiB chunks that we call ranges. Each range is replicated to at least 3 nodes to ensure survivability. This way, if nodes go down, you still have copies of the data which can be used for reads and writes, as well as replicating the data to other nodes.
+SQL RPC를 수신한 노드는, 이를 분산 키밸류 저장소와 동작하는 명령으로 변경합니다. 이러한 RPC가 클러스테어 데이터를 채울 때, 카크로치디비는 알고리즘을 이용해 노드 간 데이터를 64MiB 청크로 분산시키며 우리는 이것을 레인지라고 부릅니다. 각 레인지는 생존성을 보장하기 위해 최소 3개의 노드로 복제됩니다. 이렇게 하면 노드가 다운되어도, 읽기 및 쓰기를 할 수 있는 데이터의 사본이 남아있으며, 다른 노드에 데이터를 복제할 수 있습니다.
 
-If a node receives a read or write request it cannot directly serve, it simply finds the node that can handle the request, and communicates with it. This way you do not need to know where your data lives, CockroachDB tracks it for you, and enables symmetric behavior for each node.
+만약 노드가 직접 읽거나 쓸 수 없는 요청을 받게 된다면, 처리할 수 있는 노드를 찾아 통신합니다. 이렇게 하여 당신은 데이터가 어디에 있는지 알 필요가 없으며, 카크로치디비가 각 노드에 대해 대응하는 동작을 하게 합니다.
 
-Any changes made to the data in a range rely on a consensus algorithm to ensure a majority of its replicas agree to commit the change, ensuring industry-leading isolation guarantees and providing your application consistent reads, regardless of which node you communicate with.
+레인지에서 데이터를 변경하면 합의 알고리즘에 의존하여 복제본의 다수가 변경을 커밋하는데 동의하게 되며, 어떤 노드와 통신하는지에 관계없이, 업계최고의 독립성과 애플리케이션에 일관적인 읽기를 보장합니다.
 
-Ultimately, data is written to and read from disk using an efficient storage engine, which is able to keep track of the data's timestamp. This has the benefit of letting us support the SQL standard `AS OF SYSTEM TIME` clause, letting you find historical data for a period of time.
+궁극적으로, 데이터를 디스크에 쓰고 읽을 때 효율적인 스토리지 엔진을 사용하며, 이 엔진은 데이터의 타임스탬프를 추적할 수 있습니다. 이것은 SQL 표준인 `AS OF SYSTEM TIME`절을 지원하여 일정 기간 동안 히스토리컬 데이터를 찾을 수 있게 합니다.
 
-However, while that high-level overview gives you a notion of what CockroachDB does, looking at how the `cockroach` process operates on each of these needs will give you much greater understanding of our architecture.
+높은 수준의 개요가 당신에게 카크로치디비가 하는 것의 개념을 제공하지만, `cockroach` 프로세스가 이러한 요구사항에 어떻게 작동하는지 살펴보녀 아키텍처에 대한 이해를 훨씬 높일 수 있습니다.
 
-### Layers
+### 계층
 
-At the highest level, CockroachDB converts clients' SQL statements into key-value (KV) data, which is distributed among nodes and written to disk. Our architecture is the process by which we accomplish that, which is manifested as a number of layers that interact with those directly above and below it as relatively opaque services.
+높은 레벨에서, 카크로치디비는 클라이언트의 SQL 문을 키밸류(KV) 데이터로 변경하여 노드에 분산시켜 디스크에 키록합니다. 우리의 아키텍처는 이를 수행하는 과정이며, 위 아래에 있는 계층과 상호작용하는 여러 개의 상대적으로 불투명한 서비스 계층으로 표현됩니다.
 
-The following pages describe the function each layer performs, but mostly ignore the details of other layers. This description is true to the experience of the layers themselves, which generally treat the other layers as black-box APIs. There are interactions that occur between layers which *are not* clearly articulated and require an understanding of each layer's function to understand the entire process.
+다음 페이지는 각 계층이 수행하는 기능을 설명하고, 다른 계층의 세부사항을 대부분 무시합니다. 이 설명은 계층 자체 해당하며, 일반적으로 다른 계층을 블랙박스 API로 다룹니다. 명확하게 표현되지 *않은* 계층 간의 상호작용이 있으며, 전체 프로세스를 이해하기 위해 각 계층을 기능을 이해해야 합니다.
 
-Layer | Order | Purpose
+계층 | 순서 | 목적
 ------|------------|--------
-[SQL](sql-layer.html)  | 1  | Translate client SQL queries to KV operations.
-[Transactional](transaction-layer.html)  | 2  | Allow atomic changes to multiple KV entries.
-[Distribution](distribution-layer.html)  | 3  | Present replicated KV ranges as a single entity.
-[Replication](replication-layer.html)  | 4  | Consistently and synchronously replicate KV ranges across many nodes. This layer also enables consistent reads via leases.
-[Storage](storage-layer.html)  | 5  | Write and read KV data on disk.
+[SQL](sql-layer.html)  | 1  | 클라이언트의 SQL을 KV 명령어로 변경합니다.
+[Transactional](transaction-layer.html)  | 2  | 여러 KV 항목에 대한 원자적 변경을 지원합니다.
+[Distribution](distribution-layer.html)  | 3  | 복제된 KV 레인지를 단일 항목으로 제공합니다.
+[Replication](replication-layer.html)  | 4  | 일관성있고 동기적으로 KV 레인지를 여러 노드에 복제합니다. 이 계층은 리스를 사용해 일관성있는 읽기를 보장합니다. 
+[Storage](storage-layer.html)  | 5  | KV 데이터를 디스크에 쓰고 읽습니다.
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-Begin understanding our architecture by learning how CockroachDB works with applications in the [SQL layer](sql-layer.html).
+[SQL 계층](sql-layer.html)에서 카크로치디비가 애플리케이션과 어떻게 상호작용하는지 배워 아키텍처에 대해 알아봅시다.
