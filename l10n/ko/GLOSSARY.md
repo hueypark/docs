@@ -7,6 +7,7 @@
 | CockroachDB | 카크로치디비 | |
 | core | 코어 | 카크로치디비 오픈소스 코어를 말하는 경우 |
 | daemon | 데몬 | 서버 프로세스를 말하는 경우 |
+| DistSQL | 분산SQL | |
 | Docker | 도커 | |
 | Docker Hub | 도커 허브 | |
 | eventual consistency | 이벤츄얼 컨시스턴시 | |
@@ -22,4 +23,6 @@
 | production | 프로덕션 | 환경(개발, 테스트, 프로덕션과 같은)을 의미할 경우 |
 | quorum | 쿼럼 | |
 | stale read | 스테일 리드 | |
+| topology | 토폴로지 | |
 | What's next? | 무엇을 더 알아볼까요? | 문서에서 다음에 더 찾아볼 문서을 안내할 경우 |
+| wire protocol | 와이어 프로토콜 | |

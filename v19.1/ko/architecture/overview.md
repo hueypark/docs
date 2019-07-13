@@ -80,10 +80,10 @@ SQL RPC를 수신한 노드는, 이를 분산 키밸류 저장소와 동작하�
 계층 | 순서 | 목적
 ------|------------|--------
 [SQL](sql-layer.html)  | 1  | 클라이언트의 SQL을 KV 명령어로 변경합니다.
-[Transactional](transaction-layer.html)  | 2  | 여러 KV 항목에 대한 원자적 변경을 지원합니다.
+[트랜잭션](transaction-layer.html)  | 2  | 여러 KV 항목에 대한 원자적 변경을 지원합니다.
 [Distribution](distribution-layer.html)  | 3  | 복제된 KV 레인지를 단일 항목으로 제공합니다.
 [Replication](replication-layer.html)  | 4  | 일관성있고 동기적으로 KV 레인지를 여러 노드에 복제합니다. 이 계층은 리스를 사용해 일관성있는 읽기를 보장합니다. 
-[Storage](storage-layer.html)  | 5  | KV 데이터를 디스크에 쓰고 읽습니다.
+[스토리지](storage-layer.html)  | 5  | KV 데이터를 디스크에 쓰고 읽습니다.
 
 ## 무엇을 더 알아볼까요?
 
