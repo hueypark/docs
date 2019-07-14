@@ -15,7 +15,9 @@
 | release | 릴리즈 | |
 | stateful | 스테이트풀 | 상태를 저장한다는 의미인 경우 |
 | serializable | 시리얼라이저블 | |
+| store | 스토어 | 카크로치디비 스토리지 계층의 스토어를 말하는 경우 |
 | Helm | 헬름 | [https://helm.sh/](https://helm.sh/)을 말하는 경우 |
+| hybrid logical clock | 하이브리드 논리 시계 | |
 | latch | 래치 | 카크로치디비 트랜잭션 계층의 래치를 말하는 경우 |
 | lease | 리스 | 카크로치디비 레인지의 리스를 말하는 경우 |
 | leaseholder | 리스홀더 | |

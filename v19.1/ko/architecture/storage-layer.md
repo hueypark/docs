@@ -1,71 +1,71 @@
 ---
-title: Storage Layer
-summary: The storage layer of CockroachDB's architecture reads and writes data to disk.
+title: 스토리지 계층
+summary: 카크로치디비 아키텍처의 스토리지 계층은 데이터를 디스크에 읽고 씁니다.
 toc: true
 ---
 
-The storage layer of CockroachDB's architecture reads and writes data to disk.
+카크로치디비 아키텍처의 스토리지 계층은 데이터를 디스크에 읽고 씁니다.
 
 {{site.data.alerts.callout_info}}
-If you haven't already, we recommend reading the [Architecture Overview](overview.html).
+[아키텍처 개요](overview.html)를 먼저 읽어보는 것을 권장합니다.
 {{site.data.alerts.end}}
 
 
-## Overview
+## 개요
 
-Each CockroachDB node contains at least one `store`, specified when the node starts, which is where the `cockroach` process reads and writes its data on disk.
+카크로치디비 노드 각각은 적어도 하나의 `store` 를 포함하는데, 이는 `cockroach` 프로세스가 데이터를 디스크에 읽고 쓰는 곳입니다.
 
-This data is stored as key-value pairs on disk using RocksDB, which is treated primarily as a black-box API. Internally, each store contains three instance of RocksDB:
+이 데이터는 주로 블랙박스 API로 취급되는 RocksDB를 사용하여 디스크에 키-밸류 쌍으로 저장됩니다. 내부적으로 각 스토어에는 RocksDB 인스턴스 세 개가 있습니다.
 
-- One for the Raft log
-- One for storing temporary distributed SQL data
-- One for all other data on the node
+- Raft 로그를 위해서 하나
+- 임시 분산 SQL 데이터 저장용 하나
+- 노드의 다른 모든 데이터용 하나
 
-In addition, there is also a block cache shared amongst all of the stores in a node. These stores in turn have a collection of range replicas. More than one replica for a range will never be placed on the same store or even the same node.
+또한, 노드의 모든 스토어에 공유되는 블록 캐시도 있습니다. 이러한 스토어에는 일련의 레인지 레플리카가 있습니다. 하나의 레인지에 대한 레플리카는 같은 스토어 또느 같은 노드에 배치되지 않습니다.
 
-### Interactions with other layers
+### 다른 계층과의 상호작용
 
-In relationship to other layers in CockroachDB, the storage layer:
+카크로치디비의 다른 계층과의 관계에서 스토리지 레이어는 다음과 같습니다:
 
-- Serves successful reads and writes from the replication layer.
+- 복제 계층에서 성공적인 읽기 및 쓰기를 제공합니다.
 
-## Components
+## 구성요소
 
 ### RocksDB
 
-CockroachDB uses RocksDB––an embedded key-value store––to read and write data to disk. You can find more information about it on the [RocksDB Basics GitHub page](https://github.com/facebook/rocksdb/wiki/RocksDB-Basics).
+카크로치디비는 RocksDB--임베딩된 키-밸류 저장소--를 디스크에 읽고 쓰는 데 사용합니다. 자세한 정보는 [RocksDB 기본 GitHub 페이지](https://github.com/facebook/rocksdb/wiki/RocksDB-Basics)에서 볼 수 있습니다.
 
-RocksDB integrates really well with CockroachDB for a number of reasons:
+RocksDB는 몇 가지 이유로 카크로치디비와 정말 잘 통합됩니다:
 
-- Key-value store, which makes mapping to our key-value layer simple
-- Atomic write batches and snapshots, which give us a subset of transactions
+- 우리 키-밸류 저장소에 대한 매핑을 단순화해주는 키-밸류 저장소
+- 우리 트랜잭션의 부분집합으로 사용되는, 원자적 쓰기 배치와 스냅샷
 
-Efficient storage for the keys is guaranteed by the underlying RocksDB engine by means of prefix compression.
+키의 효율적인 저장은 RocksDB 엔진의 접두사 압축을 통해 보장됩니다.
 
 ### MVCC
 
-CockroachDB relies heavily on [multi-version concurrency control (MVCC)](https://en.wikipedia.org/wiki/Multiversion_concurrency_control) to process concurrent requests and guarantee consistency. Much of this work is done by using [hybrid logical clock (HLC) timestamps](transaction-layer.html#time-and-hybrid-logical-clocks) to differentiate between versions of data, track commit timestamps, and identify a value's garbage collection expiration. All of this MVCC data is then stored in RocksDB.
+카크로치디비는 동시 요청을 처리하고 일관성을 보장하기 위해 [다중 버전 동시성 제어 (MVCC)](https://en.wikipedia.org/wiki/Multiversion_concurrency_control)에 크게 의존합니다. 이 작업의 대부분은 [하이브리느 논리 시계 (HLC) 타임스탬프](transaction-layer.html#time-and-hybrid-logical-clocks)를 사용하여 데이터 버전을 구별하고, 커밋 타임스탬프를 추적하며, 값의 가비지 수집 만료를 식별하여 수행됩니다. 이 MVCC 데이터는 모두 RocksDB에 저장됩니다.
 
-Despite being implemented in the storage layer, MVCC values are widely used to enforce consistency in the [transaction layer](transaction-layer.html). For example, CockroachDB maintains a [timestamp cache](transaction-layer.html#timestamp-cache), which stores the timestamp of the last time that the key was read. If a write operation occurs at a lower timestamp than the largest value in the read timestamp cache, it signifies there’s a potential anomaly and the transaction must be restarted at a later timestamp.
+MVCC 값은 저장소 계층에 구현되었지만, [트랜잭션 계층](transaction-layer.html)의 일관성을 유지하는데 많이 사용됩니다. 예를 들어, 카크로치디비는 키를 읽은 마지막 시간의 타임스탬프를 저장하는 [타임스탬프 캐시](transaction-layer.html#timestamp-cache)를 유지합니다. 만약 쓰기가 읽기의 타임스탬프 캐시의 가장 큰 값보다 낮은 타임스탬프에서 발생하는 경우, 잠재적 이상현상이 있음을 나타내며 이후의 타임스탬프에서 트랜잭션을 다시 시작해야 합니다.
 
-#### Time-travel
+#### 시간 여행
 
-As described in the [SQL:2011 standard](https://en.wikipedia.org/wiki/SQL:2011#Temporal_support), CockroachDB supports time travel queries (enabled by MVCC).
+[SQL:2011 표준](https://en.wikipedia.org/wiki/SQL:2011#Temporal_support)에 설명된 것처럼, 카크로치디비는 시간 여행 쿼리(MVCC에서 사용가능)를 지원합니다.
 
-To do this, all of the schema information also has an MVCC-like model behind it. This lets you perform `SELECT...AS OF SYSTEM TIME`, and CockroachDB uses the schema information as of that time to formulate the queries.
+이것을 위해서는 모든 스키마 정보는 MVCC와 유사한 모델을 가져야 합니다. 이렇게 하면 `SELECT...AS OF SYSTEM TIME`를 수행할 수 있으며, 카크로치디비는 해당 시간의 스키마 정보를 사용하여 쿼리를 수행합니다.
 
-Using these tools, you can get consistent data from your database as far back as your garbage collection period.
+이 도구를 사용하면, 가비지 컬렉션 시간까지 데이터베이스에서 일관된 데이터를 얻을 수 있습니다.
 
-### Garbage collection
+### 가비지 컬렉션
 
-CockroachDB regularly garbage collects MVCC values to reduce the size of data stored on disk. To do this, we compact old MVCC values when there is a newer MVCC value with a timestamp that's older than the garbage collection period. By default, the garbage collection period is 24 hours, but it can be set at the cluster, database, or table level through [replication zones](../configure-replication-zones.html).
+카크로치디비는 디스크에 저장된 데이터 크기를 줄이기 위해 MVCC 값을 정기적으로 가비지 컬렉션합니다. 이를 위해 우리는 가비지 컬렉션 기간보다 오래된 타임스탬프를 가진 새로운 MVCC 값이 있을 때 오래된 MVCC 값을 압축합니다. 기본적으로 가비지 컬렉션 수집 기간은 24시간이지만 [복제 영역](../configure-replication-zones.html)을 통해 클러스터, 데이터베이스 또는 테이블 수준에서 설정할 수 있습니다.
 
-## Interactions with other layers
+## 다른 게층과의 상호작굥
 
-### Storage and replication layers
+### 스토리지와 복제 계층
 
-The storage layer commits writes from the Raft log to disk, as well as returns requested data (i.e., reads) to the replication layer.
+스토리지 계층은 복제 계층에서 요청된 데이터(즉, 읽기)를 반환하고, Raft 로그에서 디스크로 쓰기를 커밋합니다.
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-Now that you've learned about our architecture, [start a local cluster](../install-cockroachdb.html) and start [building an app with CockroachDB](../build-an-app-with-cockroachdb.html).
+당신은 아키텍처에 대해 배웠습니다. [로컬 클러스터를 시작](../install-cockroachdb.html)하고 [카크로치디비와 함께 앱을 빌드](../build-an-app-with-cockroachdb.html)해 봅시다.
