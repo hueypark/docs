@@ -1,210 +1,209 @@
 ---
-title: Transaction Layer
-summary: The transaction layer of CockroachDB's architecture implements support for ACID transactions by coordinating concurrent operations.
+title: 트랜잭션 계층
+summary: 카크로치디비 아키텍처의 트랜잭션 계층은 동시 작업을 관리하여 ACID 트랜잭션을 지원합니다.
 toc: true
 ---
 
-The transaction layer of CockroachDB's architecture implements support for ACID transactions by coordinating concurrent operations.
+카크로치디비 아키텍처의 트랜잭션 계층은 동시 작업을 관리하여 ACID 트랜잭션을 지원합니다.
 
 {{site.data.alerts.callout_info}}
-If you haven't already, we recommend reading the [Architecture Overview](overview.html).
+[아키텍처 개요](overview.html)를 먼저 읽어보는 것을 권장합니다.
 {{site.data.alerts.end}}
 
-## Overview
+## 개요
 
-Above all else, CockroachDB believes consistency is the most important feature of a database––without it, developers cannot build reliable tools, and businesses suffer from potentially subtle and hard to detect anomalies.
+다른 무엇보다 먼저, 카크로치디비는 일관성이 데이터베이스의 가장 중요한 특징이라고 생각합니다--이것 없이 개발자는 신뢰할 수 있는 도구를 만들 수 없으며, 비즈니스는 잠재적으로 미묘하고 감지하기 어려운 이상현상으로 고통받을 수 있습니다.
 
-To provide consistency, CockroachDB implements full support for ACID transaction semantics in the transaction layer. However, it's important to realize that *all* statements are handled as transactions, including single statements––this is sometimes referred to as "autocommit mode" because it behaves as if every statement is followed by a `COMMIT`.
+일관성을 제공하기 위해 카크로치디비는 트랜잭션 계층에서 ACID 트랜잭션을 완벽하게 지원합니다. 또 단일 명령어를 포함해 *모든* 명령어는 트랜잭션으로 처리되는 것을 알아야 합니다--이것은 모든 명령어에 `COMMIT`이 있는 것처럼 행동하기 때문에 때때로 "autocommit mode"라고 불립니다.
 
-For code samples of using transactions in CockroachDB, see our documentation on [transactions](../transactions.html#sql-statements).
+카크로치디비에서 트랜잭션을 사용하는 코드 샘플은 [트랜잭션](../transactions.html#sql-statements)에서 확인가능합니다.
 
-Because CockroachDB enables transactions that can span your entire cluster (including cross-range and cross-table transactions), it optimizes correctness through a two-phase commit process.
+카크로치디비는 전체 클러스터에 대한 트랜잭션(여러 레인지와 여러 테이블 트랜잭션을 포함)을 가능하게 하므로 투페이즈 커밋을 통해 정확성을 보장합니다.
 
-### Writes and reads (phase 1)
+### 쓰기와 읽기 (페이즈 1)
 
-#### Writing
+#### 쓰기
 
-When the transaction layer executes write operations, it doesn't directly write values to disk. Instead, it creates two things that help it mediate a distributed transaction:
+트랜잭션 계층이 쓰기 작업을 실행하면, 디스크에 직접 값을 쓰지 않습니다. 대신, 분산 트랜잭션을 중재하는데 필요한 두 가지를 만듭니다.
 
-- A **transaction record** stored in the range where the first write occurs, which includes the transaction's current state (which is either `PENDING`, `COMMITTED`, or `ABORTED`).
+- **트랜잭션 레코드**는 첫 번째 쓰기가 발생하는 레인지에 현재상태(`PENDING`, `COMMITTED` 또는 `ABORTED`)를 포함해 저장됩니다.
 
-- **Write intents** for all of a transaction’s writes, which represent a provisional, uncommitted state. These are essentially the same as standard [multi-version concurrency control (MVCC)](storage-layer.html#mvcc) values but also contain a pointer to the transaction record stored on the cluster.
+- **쓰기 인텐트**는 모든 트랜잭션의 쓰기에 대해, 임시의 커밋되지 않은 상태를 나타냅니다. 이것은 기본적으로 [다중 버전 동시성 제어(MVCC)](storage-layer.html#mvcc)와 동일하고, 클러스터에 저장된 트랜잭션 레코드에 대한 포인터를 포함합니다.
 
-As write intents are created, CockroachDB checks for newer committed values––if they exist, the transaction is restarted––and existing write intents for the same keys––which is resolved as a [transaction conflict](#transaction-conflicts).
+쓰기 인텐트가 생성되면 카크로치디비는 새로 커밋된 값을 확인해서--만약 존재하면 트랜잭션이 재시작되고--같은 키에 대한 쓰기 인텐트가 있으면--[트랜잭션 충돌](#transaction-conflicts)로 해결합니다.
 
-If transactions fail for other reasons, such as failing to pass a SQL constraint, the transaction is aborted.
+SQL 제약조건을 만족하지 못하는 등의 다른 이유로 트랜잭션이 실패하면, 트랜잭션은 종료됩니다.
 
-#### Reading
+#### 읽기
 
-If the transaction has not been aborted, the transaction layer begins executing read operations. If a read only encounters standard MVCC values, everything is fine. However, if it encounters any write intents, the operation must be resolved as a [transaction conflict](#transaction-conflicts).
+트랜잭션이 중단되지 않는다면, 트랜잭션 계층은 읽기 작업을 시작합니다. 읽기가 표준 MVCC 값을 만날 때는 아무 문제가 없습니다. 하지만, 만약 쓰기 인텐트를 만나게 된다면 [트랜잭션 충돌](#transaction-conflicts)을 사용해 해결해야 합니다.
 
-### Commits (phase 2)
+### 커밋 (페이즈 2)
 
-CockroachDB checks the running transaction's record to see if it's been `ABORTED`; if it has, it restarts the transaction.
+카크로치디비는 실행중인 트랜잭션의 레코드가 `ABORTED`인지 확인합니다; 만약 그렇다면 트랜잭션을 다시 시작합니다.
 
-If the transaction passes these checks, it's moved to `COMMITTED` and responds with the transaction's success to the client. At this point, the client is free to begin sending more requests to the cluster.
+트랜잭션이 이러한 검사를 통과하면, 상태를 `COMMITED`로 변경하고 트랜잭션 성공으로 클라이언트에게 응답합니다. 이 시점부터 클라이언트는 클러스터에 더 많은 요청을 보낼 수 있습니다.
 
-### Cleanup (asynchronous phase 3)
+### 정리 (비동기 페이즈 3)
 
-After the transaction has been resolved, all of the write intents should resolved. To do this, the coordinating node––which kept a track of all of the keys it wrote––reaches out to the values and either:
+트랜잭션이 해결된 후, 모든 쓰기 인텐트도 해결되어야 합니다. 그러기 위해 모든 키에 쓰기 작업이 완료된 관리자 노드가 값을 가지고 다음 중 하나를 수행합니다:
 
-- Resolves their write intents to MVCC values by removing the element that points it to the transaction record.
-- Deletes the write intents.
+- 트랜잭션 레코드를 가리키는 요소를 제거하여 쓰기 인텐트를 해소하여 MVCC 값으로 만듭니다.
+- 쓰기 인텐트를 지웁니다.
 
-This is simply an optimization, though. If operations in the future encounter write intents, they always check their transaction records––any operation can resolve or remove write intents by checking the transaction record's status.
+이것은 약간 최적화됩니다. 만약 이후에 쓰기 인텐트가 생기면, 트랜잭션 레코드를 검사합니다--모든 작업은 트랜잭션 레코드의 상태를 확인하여 쓰기 인텐트를 해소하거나 삭제할 수 있습니다.
 
-### Interactions with other layers
+### 다른 계층과의 상호작용
 
-In relationship to other layers in CockroachDB, the transaction layer:
+카크로치디비에서 트랜잭션 계층의 다른 계층과의 상호작용은 다음과 같습니다:
 
-- Receives KV operations from the SQL layer.
-- Controls the flow of KV operations sent to the distribution layer.
+- SQL 계층으로부터 KV 작업을 받습니다.
+- 분산 계층으로 전송되는 KV 작업의 흐름을 제어합니다.
 
-## Technical details and components
+## 기술 세부사항과 구성요소
 
-### Time and hybrid logical clocks
+### 시간과 하이브리드 논리 시계
 
-In distributed systems, ordering and causality are difficult problems to solve. While it's possible to rely entirely on Raft consensus to maintain serializability, it would be inefficient for reading data. To optimize performance of reads, CockroachDB implements hybrid-logical clocks (HLC) which are composed of a physical component (always close to local wall time) and a logical component (used to distinguish between events with the same physical component). This means that HLC time is always greater than or equal to the wall time. You can find more detail in the [HLC paper](http://www.cse.buffalo.edu/tech-reports/2014-04.pdf).
+분산 시스템에서, 순서와 인과관계는 해결하기 어려운 문제입니다. 직렬화를 유지하기 위해 Raft 합의에 의존할 수 있지만, 이것은 데이터를 읽을 때 비효율적입니다. 읽기 성능을 최적화하기 위해, 카크로치디비는 물리적 구성요소(어제나 local wall time에 가까운)와, 논리적 구성요소(동일한 물리적 구성요소를 갖는 이벤트를 구분하는데 사용되는)를 합친 하이브리드 논리 시계(HLC)를 구현했습니다. 이것은 HLC 시간이 언제가 wall time보다 크거나 같음을 의미합니다. [HLC 논문](http://www.cse.buffalo.edu/tech-reports/2014-04.pdf)에서 더 자세한 내용을 확인할 수 있습니다.
 
-In terms of transactions, the gateway node picks a timestamp for the transaction using HLC time. Whenever a transaction's timestamp is mentioned, it's an HLC value. This timestamp is used to both track versions of values (through [multi-version concurrency control](storage-layer.html#mvcc)), as well as provide our transactional isolation guarantees.
+트랜잭션 측면에서 게이트웨이 노드는 HLC 시간을 사용하여 트랜잭션에 대한 타임스탬프를 선택합니다. 트랜잭션의 타임스탬프는 HLC 값입니다. 이 타임스탬프는 값의 버전을 추적하고([다중 버전 동시성 제어](storage-layer.html#mvcc)를 통해) 트랜잭션 격리를 보장하는데 사용됩니다.
 
-When nodes send requests to other nodes, they include the timestamp generated by their local HLCs (which includes both physical and logical components). When nodes receive requests, they inform their local HLC of the timestamp supplied with the event by the sender. This is useful in guaranteeing that all data read/written on a node is at a timestamp less than the next HLC time.
+노드가 다른 노드에 요청을 보낼 때, 로컬 HLC(물리적, 논리적 구성요소를 모두 포함한)에 의해 생성된 타임스탬프가 포함됩니다. 노드가 요청을 수신하면 보낸 쪽의 이벤트와 함께 제공된 타임스탬프를 로컬 HLC에게 알립니다. 이는 노드에서 읽고 쓰는 모든 데이터가 다음 HLC 시간보다 이전 타임스탬프임을 보장하는데 필요합니다.
 
-This then lets the node primarily responsible for the range (i.e., the leaseholder) serve reads for data it stores by ensuring the transaction reading the data is at an HLC time greater than the MVCC value it's reading (i.e., the read always happens "after" the write).
+이것을 통해 레인지에 대한 책임이 있는 노드(리스홀더)가 데이터를 읽는 트랜잭션이 자신이 읽고 있는 MVCC 값보다 큰 HLC 시간에 있는지 확인함으로써 저장된 데이터를 읽게 합니다(즉, 읽기는 항상 쓰기 "이후"에 일어남).
 
-#### Max clock offset enforcement
+#### 최대 시계 오프셋 적용
 
-CockroachDB requires moderate levels of clock synchronization to preserve data consistency. For this reason, when a node detects that its clock is out of synch with at least half of the other nodes in the cluster by 80% of the maximum offset allowed (500ms by default), **it crashes immediately**.
+카크로치디비는 데이터 일관성을 유지하기 위해 적정 수준의 시계 동기화를 필요로 합니다. 이러한 이유로 노드가 클러스터의 다른 노드 중 절반 이상이 허용한 최대 오프셋(기본값 500ms)의 80%만큼 동기화되지 않은 것을 감지하면 **즉시 크래시를 발생시킵니다**.
 
-This avoids the risk of violating [serializable consistency](https://en.wikipedia.org/wiki/Serializability) and causing stale reads and write skews, but it's important to prevent clocks from drifting too far in the first place by running [NTP](http://www.ntp.org/) or other clock synchronization software on each node.
+이렇게 하면 [시리얼라이저블 일관성](https://en.wikipedia.org/wiki/Serializability)을 위반하고 스테일 리드나 손실된 쓰기가 발생하는 위험을 피할수 있습니다. 하지만 각 노드에서 [NTP](http://www.ntp.org/)나 다른 시계 동기화 소프트웨어를 실행하여 시간이 너무 많이 틀어지는 것을 먼저 방지해야 합니다.
 
-For more detail about the risks that large clock offsets can cause, see [What happens when node clocks are not properly synchronized?](../operational-faqs.html#what-happens-when-node-clocks-are-not-properly-synchronized)
+시간 틀어짐이 클 때 발생하는 위험에 대한 자세한 내용은, [시간이 적절히 동기화되지 않으면 무슨 일이 생깁니까?](../operational-faqs.html#what-happens-when-node-clocks-are-not-properly-synchronized)에서 확인가능합니다.
 
-### Timestamp cache
+### 타임스탬프 캐시
 
-As part of providing serializability, whenever an operation reads a value, we store the operation's timestamp in a timestamp cache, which shows the high-water mark for values being read.
+직렬화 기능을 제공하는 과정에서, 작업이 값을 읽을 때마다 작업의 타임스탬프를 캐시에 저장하는데, 이 값은 값을 읽을 수 있는 최고점을 나타냅니다.
 
-Whenever a write occurs, its timestamp is checked against the timestamp cache. If the timestamp is less than the timestamp cache's latest value, we attempt to push the timestamp for its transaction forward to a later time. Pushing the timestamp might cause the transaction to restart in the second phase of the transaction (see [read refreshing](#read-refreshing)).
+쓰기가 발생하면 그 작업의 타임스탬프는 타임스탬프 캐시와 비교됩니다. 만약 타임스탬프가 타음스탬프 캐시의 최신 값보다 작으면, 나중에 트랜잭션에 푸시하려고 합니다. 타임스탬프를 푸시하면 트랜잭션의 두 번 째 단계에서 트랜잭션이 다시 시작될 수 있습니다([읽기 갱신](#read-refreshing) 참조).
 
-### client.Txn and TxnCoordSender
+### client.Txn 과 TxnCoordSender
 
-As we mentioned in the SQL layer's architectural overview, CockroachDB converts all SQL statements into key-value (KV) operations, which is how data is ultimately stored and accessed.
+SQL 계층의 아키텍처 개요에서 언급했듯이 카크로치디비는 모든 SQL문을 키-밸류 (KV, 데이터가 궁극적으로 저장되고 사용되는) 작업으로 변환합니다.
 
-All of the KV operations generated from the SQL layer use `client.Txn`, which is the transactional interface for the CockroachDB KV layer––but, as we discussed above, all statements are treated as transactions, so all statements use this interface.
+SQL 계층에서 생성된 모든 KV 작업은 카크로치디비의 KV 계층 트랜잭션 인터페이스인 `client.Txn`을 사용합니다. 또 앞에서 설명한 것처럼 모든 명령어가 트랜잭션으로 처리되므로 모든 명령어는 이 인터페이스를 사용합니다.
 
-However, `client.Txn` is actually just a wrapper around `TxnCoordSender`, which plays a crucial role in our code base by:
+그러나, `client.Txn`은 `TxnCoordSender`를 감싸는 래퍼이고, 코드베이스에서 다음과 같이 중요한 역할을 합니다:
 
-- Dealing with transactions' state. After a transaction is started, `TxnCoordSender` starts asynchronously sending heartbeat messages to that transaction's transaction record, which signals that it should be kept alive. If the `TxnCoordSender`'s heartbeating stops, the transaction record is moved to the `ABORTED` status.
-- Tracking each written key or key range over the course of the transaction.
-- Clearing the accumulated write intent for the transaction when it's committed or aborted. All requests being performed as part of a transaction have to go through the same `TxnCoordSender` to account for all of its write intents, which optimizes the cleanup process.
+- 트랜잭션 상태 다루기. 트랜잭션시 시작되면 `TxnCoordSender`는 비동기적으로 하트비트 메시지를 트랜잭션의 트랜잭션 레코드로 보내, 트랜잭션을 유지합니다. 만약 `TxnCoordSender`의 하트비트가 멈추면, 트랜잭션 레코드는 `ABORTED` 상태가 됩니다.
+- 트랜잭션 중 쓰여진 키 또는 키 레인지를 추적합니다.
+- 트랜잭션이 커밋되거나 중단될 때 누적된 쓰기 인텐트를 정리합니다. 트랜잭션의 일부로 수행되는 모든 요청은 쓰기 인텐트를 위해 동일한 `TxnCoordSender`를 사용하기 때문에, 정리 프로세스가 최적화됩니다.
 
-After setting up this bookkeeping, the request is passed to the `DistSender` in the distribution layer.
+이 처리 이후에, 요청은 분산 계층의 `DistSender`로 전달됩니다.
 
-### Latch manager
+### 래치 관리자
 
-As write operations occur for a range, the range's leaseholder serializes them; that is to say that they are placed into some consistent order. 
+쓰기 요청이 레인지에 발생하면, 리스홀더가 시리얼라이즈 합니다; 즉 그들은 고정된 순서로 배치됩니다.
 
-To enforce this serialization, the leaseholder creates a "latch" for the keys in the write value, providing uncontested access to the keys. If other operations come into the leaseholder for the same set of keys, they must wait for the latch to be released before they can proceed.
+이 시리얼라이즈를 적용하기 위해, 리스홀더는 쓰기 값의 키에 대해 "래치"를 만들어 키에 대한 비경쟁 접근을 보장합니다. 리스홀더의 동일한 키에 대해 다른 작업이 오면, 래치가 해제될 때까지 기다리게 됩니다.
 
-Of note, only write operations generate a latch for the keys. Read operations do not block other operations from executing.
+참고로, 쓰기 작업만이 키에 대한 래치를 만듭니다. 읽기 작업은 다른 작업의 실행을 차단하지 않습니다.
 
-Another way to think of a latch is like a mutex, which is only needed for the duration of a low-level operation. To coordinate longer-running, higher-level operations (i.e., client transactions), we use a durable system of [write intents](#write-intents).
+래치는 저수준 작업 기간동안만 필요하기 때문에, 뮤텍스처럼 생각될 수도 있습니다. 장기간의 고수준 작업(즉, 클라이언트 트랜잭션)을 조정하기 위해서는 [쓰기 인텐트](#write-intents)의 내구성 시스템을 사용합니다.
 
-### Transaction records
+### 트랜잭션 레코드
 
-To track the status of a transaction's execution, we write a value called a transaction record to our key-value store. All of a transaction's write intents point back to this record, which lets any transaction check the status of any write intents it encounters. This kind of canonical record is crucial for supporting concurrency in a distributed environment.
+트랜잭션의 실행상태를 추적하기 위해 우리는 트랜잭션 레코드를 키-밸류 저장소에 씁니다. 모든 트랜잭션의 쓰기 인텐트는 이 레코드를 다시 가리켜서, 모든 트랜잭션이 쓰기 인텐트의 상태를 확인할 수 있습니다. 이런 정규 레코드는 분산 환경에서 동시성을 지원하는데 중요합니다.
 
-Transaction records are always written to the same range as the first key in the transaction, which is known by the `TxnCoordSender`. However, the transaction record itself isn't created until one of the following conditions occur:
+트랜잭션 레코드는 언제나 첫번째 키의 트랜잭션과 같은 레인지에 쓰여지며, 이는 `TxnCoordSender`를 통해 알 수 있습니다. 그러나, 트랜잭션 레코드는 다음 조건이 발생할 때까지 생기지 않습니다:
 
-- The write operation commits
-- The `TxnCoordSender` heartbeats the transaction
-- An operation forces the transaction to abort
+- 쓰기 작업 커밋
+- `TxnCoordSender`가 트랜잭션 하트비트
+- 작업이 트랜잭션을 강제 중단
 
-Given this mechanism, the transaction record uses the following states:
+이 매커니즘을 위해, 트랜잭션 레코드는 다음 상태를 사용합니다:
 
-- `PENDING`: Indicates that the write intent's transaction is still in progress.
-- `COMMITTED`: Once a transaction has completed, this status indicates that write intents can be treated as committed values.
-- `ABORTED`: Indicates that the transaction was aborted and its values should be discarded.
-- _Record does not exist_: If a transaction encounters a write intent whose transaction record doesn't exist, it uses the write intent's timestamp to determine how to proceed. If the write intent's timestamp is within the transaction liveness threshold, the write intent's transaction is treated as if it is `PENDING`, otherwise it's treated as if the transaction is `ABORTED`.
+- `PENDING`: 쓰기 인텐트의 트랜잭션이 진행중임을 나타냅니다.
+- `COMMITTED`: 트랜잭션이 완료되면, 이 상태로 쓰기 인텐트가 커밋된 값으로 처리될 수 있음을 나타냅니다.
+- `ABORTED`: 트랜잭션이 중단되었으며 해당 값을 버려야 함을 나타냅니다. 
+- _레코드가 존재하지 않습니다_: 트랜잭션이 트랜잭션 레코드가 없는 쓰기 인텐트를 발견하면 쓰기 인텐트의 타임스탬프를 사용하여 진행 방법을 결정합니다. 쓰기 인텐트의 타임스탬프가 트랜잭션 활성 임계값 내에 있으면 `PENDING`으로 처리되고, 그렇지 않으면 `ABORTED`로 처리됩니다.
 
-The transaction record for a committed transaction remains until all its write intents are converted to MVCC values.
+커밋된 트랜잭션의 트랜잭션 레코드는 모든 쓰기 인텐트가 MVCC 값으로 변환될 때까지 유지됩니다.
 
-### Write intents
+### 쓰기 인텐트
 
-Values in CockroachDB are not written directly to the storage layer; instead everything is written in a provisional state known as a "write intent." These are essentially MVCC records with an additional value added to them which identifies the transaction record to which the value belongs.
+카크로치디비의 값은 저장소 계층에 직접 쓰이지 않습니다. 대신 모든 것은 "쓰기 인텐트"라고 불리는 임시 상태로 쓰입니다. 이것은 본질적으로 트랜잭션 레코드를 식별하는 추가값을 가진 MVCC 레코드입니다.
 
-Whenever an operation encounters a write intent (instead of an MVCC value), it looks up the status of the transaction record to understand how it should treat the write intent value. If the transaction record is missing, the operation checks the write intent's timestamp and evaluates whether or not it is considered expired.
+작업이 쓰기 인텐트(MVCC 값을 대신에)를 만나면, 트랜잭션 레코드의 상태를 조회하여 쓰기 인텐트를 처리하는 방법을 확인합니다. 트랜잭션 레코드가 없는 경우 작업은 쓰기 인텐트의 타임스탬프를 확인하여 만료 여부를 평가합니다.
 
-#### Resolving write intents
+#### 쓰기 인텐트 해소
 
-Whenever an operation encounters a write intent for a key, it attempts to "resolve" it, the result of which depends on the write intent's transaction record:
+작업이 쓰기 인텐트를 만나면, 쓰기 인텐트의 트랜잭션 레코드의 상태에 따라 "해소"하려고 합니다:
 
-- `COMMITTED`: The operation reads the write intent and converts it to an MVCC value by removing the write intent's pointer to the transaction record.
-- `ABORTED`: The write intent is ignored and deleted.
-- `PENDING`: This signals there is a [transaction conflict](#transaction-conflicts), which must be resolved.
-- _Record does not exist_: If the write intent was created within the transaction liveness threshold, it's the same as `PENDING`, otherwise it's treated as `ABORTED`.
+- `COMMITTED`: 작업은 쓰기 인텐트를 읽고 트랜잭션 레코드에 대한 쓰기 인텐트의 포인터를 제거하여, MVCC 값으로 변환합니다.
+- `ABORTED`: 쓰이 인텐트는 무시되고 제거됩니다.
+- `PENDING`: 이것은 해소되어야 할 [트랜잭션 충돌](#transaction-conflicts)이 있다는 뜻입니다.
+- _레코드가 존재하지 않습니다_: 쓰기 인텐트가 트랜잭션 활성 임계값 내에서 생성되었으면 `PENDING`, 아니면 `ABORTED`로 처리됩니다.
 
-### Isolation levels
+### 격리 수준
 
-Isolation is an element of [ACID transactions](https://en.wikipedia.org/wiki/ACID), which determines how concurrency is controlled, and ultimately guarantees consistency.
+격리는 [ACID 트랜잭션](https://en.wikipedia.org/wiki/ACID)의 요소로, 동시성 제어 방식을 결정하고, 궁극적으로 일관성을 보장합니다.
 
-CockroachDB executes all transactions at the strongest ANSI transaction isolation level: `SERIALIZABLE`. All other ANSI transaction isolation levels (e.g., `SNAPSHOT`, `READ UNCOMMITTED`, `READ COMMITTED`, and `REPEATABLE READ`) are automatically upgraded to `SERIALIZABLE`. Weaker isolation levels have historically been used to maximize transaction throughput. However, [recent research](http://www.bailis.org/papers/acidrain-sigmod2017.pdf) has demonstrated that the use of weak isolation levels results in substantial vulnerability to concurrency-based attacks.
+카크로치디비는 가장 강력한 ANSI 트랜잭션 격리 수준인 `SERIALIZABLE`로 모든 트랜잭션을 실행합니다. 다른 모든 ANSI 트랜잭션 격리 수준(`SNAPSHOT`, `READ UNCOMMITTED`, `READ COMMITTED` 와 `REPEATABLE READ`)은 `SERIALIZABLE` 으로 자동 업그레이드됩니다. 이전에는 트랜잭션 처리량을 최대화하기 위해 약한 격리 수준이 사용되었습니다. 그러나 [최근 연구](http://www.bailis.org/papers/acidrain-sigmod2017.pdf)는 약한 격리 수준을 사용했을 때 동시성 기반 공격에 상단한 취약성이 있음이 입증되었습니다.
 
-CockroachDB now only supports `SERIALIZABLE` isolation. In previous versions of CockroachDB, you could set transactions to `SNAPSHOT` isolation, but that feature has been removed.
+카크로치디비는 `SERIALIZABLE` 격리만을 지원합니다. 이전 버전의 카크로치디비에서는 트랜잭션 격리를 `SNAPSHOT`으로 설정할 수 있었지만, 그 기증은 제거되었습니다.
 
-`SERIALIZABLE` isolation does not allow any anomalies in your data, and is enforced by requiring the client to retry transactions if serializability violations are possible.
+`SERIALIZABLE` 격리는 데이터에 어떤 이상현상도 허용하지 않으며, 직렬화 가능성 위반이 발생할 수 있는 경우 클라이언트가 트랜잭션을 재시도하도록 요구합니다.
 
-### Transaction conflicts
+### 트랜잭션 충돌
 
-CockroachDB's transactions allow the following types of conflicts that involve running into an intent:
+카크로치디비의 트랜잭션은 이텐트로 실행되는 다음과 같은 유형의 충돌을 허용합니다:
 
-- **Write/write**, where two `PENDING` transactions create write intents for the same key.
-- **Write/read**, when a read encounters an existing write intent with a timestamp less than its own.
+- **쓰기/쓰기**는, 두 개의 `PENDING` 트랜잭션이 하나의 키에 인텐트를 만드는 상황입니다.
+- **쓰기/읽기**는, 읽기가 자기보다 작은 타임스탬프를 가진 쓰기 인텐트를 만나는 상황입니다.
 
-To make this simpler to understand, we'll call the first transaction `TxnA` and the transaction that encounters its write intents `TxnB`.
+이것을 간단히 이해하기 위해 첫번째 트랜잭션을 `TxnA`, 쓰기 인텐트와 만나는 두번째 트랜잭션을 `TxnB`라고 부르겠습니다.
 
-CockroachDB proceeds through the following steps:
+카크로치디비는 다음 단계를 진행합니다:
 
-1. If the transaction has an explicit priority set (i.e., `HIGH` or `LOW`), the transaction with the lower priority is aborted (in the write/write case) or has its timestamp pushed (in the write/read case).
+1. 만약 트랜잭션이 명시적인 우선 순위(즉, `HIGH` 또는 `LOW`)를 가지면, 낮은 우선순위의 트랜잭션은 중단되거나(쓰기/쓰기의 경우) 타임스탬프가 푸시됩니다(쓰기/읽기의 경우).
 
-1. If the encountered transaction is expired, it's `ABORTED` and conflict resolution succeeds. We consider a write intent expired if:
-	- It doesn't have a transaction record and its timestamp is outside of the transaction liveness threshold.
-	- Its transaction record hasn't been heartbeated within the transaction liveness threshold.
+2. 트랜잭션이 만료되면, 이것은 `ABORTED`되어 트랜잭션 충돌해결은 성공합니다. 다음과 같은 경우는 쓰기 인텐트가 만료된 것으로 간주합니다:
+	- 트랜잭션 레코드가 없고 타임스탬프가 활성 임계값을 벗어났습니다.
+  - 트랜잭션 레코드의가 활성 임계값 내에서 하트비트 되지 않았습니다.
 
-2. `TxnB` enters the `TxnWaitQueue` to wait for `TxnA` to complete.
+3.  `TxnB` 는 `TxnWaitQueue` 에 들어가 `TxnA` 가 완료되기를 기다립니다.
 
-Additionally, the following types of conflicts that do not involve running into intents can arise:
+추가로, 인텐트를 생기게 하지 않는 다음과 같은 충돌이 있습니다.
 
-- **Write after read**, when a write with a lower timestamp encounters a later read. This is handled through the [timestamp cache](#timestamp-cache).
-- **Read within uncertainty window**, when a read encounters a value with a higher timestamp but it's ambiguous whether the value should be considered to be in the future or in the past of the transaction because of possible *clock skew*. This is handled by attempting to push the transaction's timestamp beyond the uncertain value (see [read refreshing](#read-refreshing)). Note that, if the transaction has to be retried, reads will never encounter uncertainty issues on any node which was previously visited, and that there's never any uncertainty on values read from the transaction's gateway node.
+- **읽기 다음에 쓰기**는, 더 낮은 타임스탬프를 가진 쓰기가 읽기를 만날떄 발생합니다. 이것은 [타임스탬프 캐시](#timestamp-cache)로 해소됩니다.
+- **불명확한 window에서 읽기**는, 읽기가 타임스탬프가 더 높은 값을 만났지만 *시간 오차*로 인해 트랜잭션이 미래 또는 과거로 간주어야될지 모호한 상황입니다. 이것은 트랜잭션의 타임스탬프를 불확실한 값([읽기 리프레시](#read-refreshing)) 이상으로 푸시함으로써 해소됩니다. 트랜잭션이 재시도되면, 읽기는 이전에 방문한 노드에서 불명확한 문제를 격지 않을 것이며, 트랜잭션 게이트웨이 노드에서 읽은 값에 대한 불명확은 없어집니다.
 
 ### TxnWaitQueue
 
-The `TxnWaitQueue` tracks all transactions that could not push a transaction whose writes they encountered, and must wait for the blocking transaction to complete before they can proceed.
+`TxnWaitQueue`는 쓰기 충돌으로 푸시할 수 없었던 발생한 트랜잭션을 추적하고, 재시작할 수 있을 때까지 트랜잭션을 차단합니다.
 
-The `TxnWaitQueue`'s structure is a map of blocking transaction IDs to those they're blocking. For example:
+`TxnWaitQueue`는 트랜잭션을 차단하는 트랜잭션 ID의 맵입니다. 예를 들어:
 
 ~~~
 txnA -> txn1, txn2
 txnB -> txn3, txn4, txn5
 ~~~
 
-Importantly, all of this activity happens on a single node, which is the leader of the range's Raft group that contains the transaction record.
+중요한 것은, 이 모든 활동이 트랜잭션 레코드를 포함한 레인지의 리더인 Raft 그룹인, 단일 노드에서 발생하는 것입니다.
 
-Once the transaction does resolve––by committing or aborting––a signal is sent to the `TxnWaitQueue`, which lets all transactions that were blocked by the resolved transaction begin executing.
+트랜잭션이 완료되면--커밋 또는 중단으로--신호가 `TxnWaitQueue`에 보내져서, 완료된 트랜잭션으로 차단된 모든 트랜잭션이 시작될 수 있게 합니다.
 
-Blocked transactions also check the status of their own transaction to ensure they're still active. If the blocked transaction was aborted, it's simply removed.
+차단된 트랜잭션은 스스로의 상태를 점검하여 트랜잭션이 여전히 활성 상태인지 확인합니다. 중단된 경우에는 바로 제거됩니다.
 
-If there is a deadlock between transactions (i.e., they're each blocked by each other's Write Intents), one of the transactions is randomly aborted. In the above example, this would happen if `TxnA` blocked `TxnB` on `key1` and `TxnB` blocked `TxnA` on `key2`.
+트랜잭션간 교착상태(즉, 서로의 쓰기 인텐트에 의해 차단된 경우)가 있는 경우 트랜잭션 중 하나가 임의로 중단됩니다. 위의 예에서 `TxnA`가 `key1`에서 `TxnB`를 막고, `TxnB`가 `key2`에서 `TxnA`를 막을 경우 발생합니다.
 
-### Read refreshing
+### 읽기 리프레시
 
-Whenever a transaction's timestamp has been pushed, additional checks are required before allowing it to commit at the pushed timestamp: any values which the transaction previously read must be checked to verify that no writes have subsequently occurred between the original transaction timestamp and the pushed transaction timestamp. This check prevents serializability violation. The check is done by keeping track of all the reads using a dedicated `RefreshRequest`. If this succeeds, the transaction is allowed to commit (transactions perform this check at commit time if they've been pushed by a different transaction or by the timestamp cache, or they perform the check whenever they encounter a `ReadWithinUncertaintyIntervalError` immediately, before continuing).
-If the refreshing is unsuccessful, then the transaction must be retried at the pushed timestamp.
+트랜잭션 타임스탬프가 푸시되면, 푸시된 타임스탬프가 커밋되기 전에 추가 검사가 필요합니다: 트랜잭션 이전에 읽은 값은 원래 타임스탬프와 푸시된 타임스탬프 사이에 쓰기가 발생하지 않았음을 검증해야 합니다. 이 검사는 직렬화 위반을 방지합니다. 이 검사는 `RefreshRequest`를 이용해 모든 읽기를 추적하여 수행됩니다. 이것이 성공하면 트랜잭션은 커밋될 수 있습니다(다른 트랜잭션이나 타임스탬프 캐시에 의해 푸시되을 때는 커밋 시, `ReadWithinUncertaintyIntervalError`가 발생하면 즉시 이 검사를 수행함). 리프레시가 실패한 경우 푸시된 타임스탬프 내에 트랜잭션을 다시 시도해야 합니다.
 
-### Transaction pipelining
+### 트랜잭션 파이프라이닝
 
-Transactional writes are pipelined when being replicated and when being written to disk, dramatically reducing the latency of transactions that perform multiple writes. For example, consider the following transaction:
+트랜잭션 쓰기는 복제되거나 디스크에 기록될 때, 여러 쓰기를 수행하여 대기시간을 획기적으로 줄입니다. 예로 다음 트랜잭션을 보십시오:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -218,35 +217,35 @@ Transactional writes are pipelined when being replicated and when being written 
   COMMIT;
 ~~~
 
-In versions prior to 2.1, for each `INSERT` statement above, the transaction gateway node would have to wait for write intents to propagate to each leaseholder, resulting in higher cumulative latency.
+버전 2.1 전에는, 위의 각 `INSERT` 문에 대해, 트랜잭션 게이트웨이 노드는 쓰기 인텐트가 각 리스홀더에게 전파될 때까지 기다렸기 때문에, 누적 대기시간이 길었습니다.
 
-In versions 2.1 and later, write intents are propagated to leaseholders in parallel, so the waiting all happens at the end, at transaction commit time.
+버전 2.1 이후에는 쓰기 인텐트가 병렬로 전달되므로, 대기는 모드 마지막의 트랜잭션 커밋 시에 발생합니다.
 
-At a high level, transaction pipelining works as follows:
+높은 수준에서 트랜잭션 파이프라이닝은 다음과 같이 동작합니다:
 
-1. For each statement, the transaction gateway node communicates with the leaseholders (*L*<sub>1</sub>, *L*<sub>2</sub>, *L*<sub>3</sub>, ..., *L*<sub>i</sub>) for the ranges it wants to write to. Since the primary keys in the table above are UUIDs, the ranges are probably split across multiple leaseholders (this is a good thing, as it decreases [transaction conflicts](#transaction-conflicts)).
+1. 각 명령문에서, 트랜잭션 게이트웨이 노드는 쓰기를 원하는 레인지의 리스홀더들(*L*<sub>1</sub>, *L*<sub>2</sub>, *L*<sub>3</sub>, ..., *L*<sub>i</sub>)과 통신합니다. 이 테이블의 기본키는 UUID이므로 레인지는 여러 리스홀더에 걸쳐 분할되어 있습니다([트랜잭션 충돌](#transaction-conflicts)을 줄이므로 이득임).
 
-2. Each leaseholder *L*<sub>i</sub> receives the communication from the transaction gateway node and does the following in parallel:
-  - Creates write intents and sends them to its follower nodes.
-  - Responds to the transaction gateway node that the write intents have been sent. Note that replication of the intents is still in-flight at this stage.
+2. 각 리스홀더 *L*<sub>i</sub> 는 트랜잭션 게이트웨이 노드로부터 요청을 수신하고 병렬로 다음을 수행합니다:
+  - 쓰기 인텐트를 작성하고 그것를 팔로워 노드로 보냅니다.
+  -  쓰기 인텐트가 전송된 것을 트랜잭션 게이트웨이 노드에 알려줍니다. 이 시점에 인텐트의 복제는 아직 진행중입니다.
 
-3. When attempting to commit, the transaction gateway node then waits for the write intents to be replicated in parallel to all of the leaseholders' followers. When it receives responses from the leaseholders that the write intents have propagated, it commits the transaction.
+3. 커밋을 시도할 때 트랜잭션 게이트웨이 노드는 쓰기 인텐트가 모든 리스홀더의 팔로워에게 복제될 때까지 기다랍니다. 쓰기 인텐트가 전파되었음을 리스홀더로부터 전달받으면, 트랜잭션을 커밋합니다.
 
-In terms of the SQL snippet shown above, all of the waiting for write intents to propagate and be committed happens once, at the very end of the transaction, rather than for each individual write, which was the prior behavior. This changes the cost of multiple writes from `O(n)` in the number of SQL DML statements to `O(1)`.
+위의 SQL 코드에서 보듯이 쓰기 인텐트가 전달되고 커밋되기를 기다리는 작업은 이전의 개별 쓰기에서가 아니라, 트랜잭션이 끝날 때 한 번 발생합니다. 이것은 여러 쓰기의 비용을 SQL DML 문의 수에 의한 `O(n)` 에서 `O(1)`로 변경시킵니다. 
 
-## Technical interactions with other layers
+## 다른 계층과 기술적인 상호작용
 
-### Transaction and SQL layer
+### 트랜잭션과 SQL 계층
 
-The transaction layer receives KV operations from `planNodes` executed in the SQL layer.
+트랜잭션 계층은 SQL 계층의 `planNodes` 에서 KV 연산을 받습니다.
 
-### Transaction and distribution layer
+### 트랜잭션과 분산 계층
 
-The `TxnCoordSender` sends its KV requests to `DistSender` in the distribution layer.
+`TxnCoordSender` 는 KV 요청을 분산 계층의 `DistSender` 로 보냅니다.
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-Learn how CockroachDB presents a unified view of your cluster's data in the [distribution layer](distribution-layer.html).
+카크로치디비가 [분산 계층](distribution-layer.html)에서 클러스터 데이터의 통합된 뷰를 제공하는 방법에 대해 알아보십시오.
 
 <!-- Links -->
 
