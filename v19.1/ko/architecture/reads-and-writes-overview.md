@@ -1,67 +1,67 @@
 ---
-title: Reads and Writes in CockroachDB
-summary: Learn how reads and writes are affected by the replicated and distributed nature of data in CockroachDB.
+title: 카크로치디비에서의 읽기와 쓰기
+summary: 카크로치디비의 복제되는 분산 환경의 데이터 특성에 의해 읽기와 쓰기가 어떤 영향을 받는지 알아봅니다.
 toc: true
 ---
 
-This page explains how reads and writes are affected by the replicated and distributed nature of data in CockroachDB. It starts by summarizing some important [CockroachDB architectural concepts](overview.html) and then walks you through a few simple read and write scenarios.
+이 페이지는 카크로치디비의 복제되는 분산 환경의 데이터 특성에 의해 읽기와 쓰기가 어떤 영향을 받는지 설명합니다. 중요 [카크로치디비 아키텍처 개념](overview.html)을 요약한 다음 몇 가지 간단한 읽기와 쓰기 시나리오를 안내합니다. 
 
 {{site.data.alerts.callout_info}}
-For a more detailed trace of a query through the layers of CockroachDB's architecture, see [Life of a Distributed Transaction](life-of-a-distributed-transaction.html).
+카크로치디비 아키텍처에서 쿼리에 대한 좀 더 자세한 내용은, [분산 트랜잭션의 수명](life-of-a-distributed-transaction.html)에서 확인가능합니다.
 {{site.data.alerts.end}}
 
-## Important concepts
+## 주요 개념
 
 {% include {{ page.version.version }}/misc/basic-terms.md %}
 
-As mentioned above, when a query is executed, the cluster routes the request to the leaseholder for the range containing the relevant data. If the query touches multiple ranges, the request goes to multiple leaseholders. For a read request, only the leaseholder of the relevant range retrieves the data. For a write request, the Raft consensus protocol dictates that a majority of the replicas of the relevant range must agree before the write is committed.
+위에서 업급했듯이, 쿼리가 실행되면, 클러스터는 데이터가 들어있는 레인지의 리스홀더에게 요청을 전달합니다. 쿼리가 여러 레인지를 요구하면, 요청은 여러 리스홀더에게 전달됩니다. 읽기 요청의 경우, 리스홀더만 데이터를 검색합니다. 쓰기 요청의 경우, Raft 합의 프로토콜은 쓰기가 커밋되기 전에 레인지에 있는 대부분의 레플리카가 동의해야 한다고 규정합니다.
 
-Let's consider how these mechanics play out in some hypothetical queries.
+이 메커니즘이 가상의 쿼리에서 어떻게 동작하는지 생각해 봅시다.
 
-## Read scenario
+## 읽기 시나리오
 
-First, imagine a simple read scenario where:
+먼저, 간단한 읽기 시나리오입니다:
 
-- There are 3 nodes in the cluster.
-- There are 3 small tables, each fitting in a single range.
-- Ranges are replicated 3 times (the default).
-- A query is executed against node 2 to read from table 3.
+- 클러스터에 3개의 노드가 있습니다.
+- 3개의 작은 테이블이, 단일 레인지에 위치해 있습니다.
+- 레인지는 3개의 복제본을 가집니다 (기본값).
+- 쿼리는 노드 2에서 테이블 3을 읽습니다.
 
 <img src="{{ 'images/v19.1/perf_tuning_concepts1.png' | relative_url }}" alt="Perf tuning concepts" style="max-width:100%" />
 
-In this case:
+이 경우:
 
-1. Node 2 (the gateway node) receives the request to read from table 3.
-2. The leaseholder for table 3 is on node 3, so the request is routed there.
-3. Node 3 returns the data to node 2.
-4. Node 2 responds to the client.
+1. 노드 2 (게이트웨이 노드) 테이블 3을 읽으려는 요청을 받습니다.
+2. 테이블 3의 리스홀더는 노드 3에 있기 때문에, 요청은 전달됩니다.
+3. 노드 3은 데이터를 노드 2에게 반환합니다.
+4. 노드 2가 클라이언트에 응답합니다.
 
-If the query is received by the node that has the leaseholder for the relevant range, there are fewer network hops:
+만약 리스홀더가 있는 노드가 쿼리를 수신하면 네트워크 전송이 줄어듭니다:
 
 <img src="{{ 'images/v19.1/perf_tuning_concepts2.png' | relative_url }}" alt="Perf tuning concepts" style="max-width:100%" />
 
-## Write scenario
+## 쓰기 시나리오
 
-Now imagine a simple write scenario where a query is executed against node 3 to write to table 1:
+이제 노드 3에 쿼리를 실행하여 테이블 1에 쓰는 쓰기 시나리오를 살펴보겠습니다:
 
 <img src="{{ 'images/v19.1/perf_tuning_concepts3.png' | relative_url }}" alt="Perf tuning concepts" style="max-width:100%" />
 
-In this case:
+이 경우:
 
-1. Node 3 (the gateway node) receives the request to write to table 1.
-2. The leaseholder for table 1 is on node 1, so the request is routed there.
-3. The leaseholder is the same replica as the Raft leader (as is typical), so it simultaneously appends the write to its own Raft log and notifies its follower replicas on nodes 2 and 3.
-4. As soon as one follower has appended the write to its Raft log (and thus a majority of replicas agree based on identical Raft logs), it notifies the leader and the write is committed to the key-values on the agreeing replicas. In this diagram, the follower on node 2 acknowledged the write, but it could just as well have been the follower on node 3. Also note that the follower not involved in the consensus agreement usually commits the write very soon after the others.
-5. Node 1 returns acknowledgement of the commit to node 3.
-6. Node 3 responds to the client.
+1. 노드 3 (게이트웨이 노드)가 테이블 1에 쓰는 요청을 받습니다.
+2. 테이블 1의 리스홀더는 노드 1이기 때문에, 요청은 그 쪽으로 전달됩니다.
+3. 리스홀더는 Raft 리더와 동일한 복제본(일반적으로)이므로, 스스로의 Raft 로그에 쓰는 동시에 팔로워 레플리카인 노드 2와 3에 통지합니다.
+4. 한 팔로워가 Raft 로그에 쓴 후(대부분의 레플리카가 Raft 로그에 동의함), 리더에게 알리고 쓰기는 동의되어 키-밸류 값으로 커밋됩니다. 이 다이어그램에서는 노드 2가 쓰기를 확정했지만, 노드 3이 될 수도 있습니다. 또 합의에 참여하지 않은 팔로워는 보통 빠를 시간 내에 커밋됩니다.
+5. 노드 1은 노드 3에 커밋 승인을 반환합니다.
+6. 노드 3이 클라이언트에 응답합니다.
 
-Just as in the read scenario, if the write request is received by the node that has the leaseholder and Raft leader for the relevant range, there are fewer network hops:
+읽기 시나리오와 마찬가지로, 리스홀더를 가진 Raft 리더가 있는 노드가 쓰기 요청을 수신하면 네트워크 전송이 줄어듭니다:
 
 <img src="{{ 'images/v19.1/perf_tuning_concepts4.png' | relative_url }}" alt="Perf tuning concepts" style="max-width:100%" />
 
-## Network and I/O bottlenecks
+## 네트워크와 I/O 병목
 
-With the above examples in mind, it's always important to consider network latency and disk I/O as potential performance bottlenecks. In summary:
+위의 예를 염두에 두고, 네트워크 지연 및 I/O를 잠재적인 성능 병목으로 생각하는 것이 중요합니다. 요약하자면:
 
-- For reads, hops between the gateway node and the leaseholder add latency.
-- For writes, hops between the gateway node and the leaseholder/Raft leader, and hops between the leaseholder/Raft leader and Raft followers, add latency. In addition, since Raft log entries are persisted to disk before a write is committed, disk I/O is important.
+- 읽기의 경우, 게이트웨이 노드와 리스홀더 사이의 전송이 대기시간을 늘립니다.
+- 읽기의 경우, 게이트웨이 노드와 리스홀더/Raft 리더 사이 또는 리스홀더/Raft 리더와 Raft 팔로워 사이의 전송이 대기시간을 늘립니다. 또 쓰기가 커밋되기 전에 Raft 로그가 디스크에 유지되므로 디스크 I/O가 중요합니다.
