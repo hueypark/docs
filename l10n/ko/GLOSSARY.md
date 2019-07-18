@@ -7,6 +7,7 @@
 | CockroachDB | 카크로치디비 | |
 | core | 코어 | 카크로치디비 오픈소스 코어를 말하는 경우 |
 | daemon | 데몬 | 서버 프로세스를 말하는 경우 |
+| descriptor | 디스크립터 | 카크로치디비의 KV 자료구조의 디스크립터를 말하는 경우 |
 | DistSQL | 분산SQL | |
 | Docker | 도커 | |
 | Docker Hub | 도커 허브 | |
@@ -24,6 +25,7 @@
 | local | 로컬 | 개발자 로컬 장비를 의미하는 경우 |
 | macOS | 맥OS | |
 | Minikube | 미니쿠베 | |
+| monolithic | 모놀리식 | |
 | package manager | 패키지 매니저 | |
 | production | 프로덕션 | 환경(개발, 테스트, 프로덕션과 같은)을 의미할 경우 |
 | quorum | 쿼럼 | |
@@ -31,6 +33,7 @@
 | timestamp | 타임스탬프 | |
 | topology | 토폴로지 | |
 | two-phase commit | 투페이즈 커밋 | |
+| update | 업데이트 | |
 | What's next? | 무엇을 더 알아볼까요? | 문서에서 다음에 더 찾아볼 문서을 안내할 경우 |
 | wire protocol | 와이어 프로토콜 | |
 | write intents | 쓰기 인텐트 | |

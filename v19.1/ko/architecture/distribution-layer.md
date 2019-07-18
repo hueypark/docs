@@ -1,117 +1,117 @@
 ---
-title: Distribution Layer
-summary: The distribution layer of CockroachDB's architecture provides a unified view of your cluster's data.
+title: 분산 계층
+summary: 카크로치디비 아키텍처의 분산 계층은 클러스터 데이터의 통합된 뷰를 제공합니다.
 toc: true
 ---
 
-The distribution layer of CockroachDB's architecture provides a unified view of your cluster's data.
+카크로치디비 아키텍처의 분산 계층은 클러스터 데이터의 통합된 뷰를 제공합니다.
 
 {{site.data.alerts.callout_info}}
-If you haven't already, we recommend reading the [Architecture Overview](overview.html).
+[아키텍처 개요](overview.html)를 먼저 읽어보는 것을 권장합니다.
 {{site.data.alerts.end}}
 
-## Overview
+## 개요
 
-To make all data in your cluster accessible from any node, CockroachDB stores data in a monolithic sorted map of key-value pairs. This key-space describes all of the data in your cluster, as well as its location, and is divided into what we call "ranges", contiguous chunks of the key-space, so that every key can always be found in a single range.
+모든 노드에서 모든 데이터에 접근할 수 있게 하기 위해, 카크로치디비는 정렬된 모놀리식 맵에 키-밸류 값을 저장합니다. 이 키 공간은 클러스터 내 모든 데이터의 위치를 나타내며, 우리가 "레인지"라고 말하는, 키 공간의 연속된 청크로 나뉘어, 모든 키가 항상 단일 레인지에서 검색가능합니다.
 
-CockroachDB implements a sorted map to enable:
+카크로치디비는 정렬된 맵을 구현하여 다음을 가능하게 합니다:
 
-  - **Simple lookups**: Because we identify which nodes are responsible for certain portions of the data, queries are able to quickly locate where to find the data they want.
-  - **Efficient scans**: By defining the order of data, it's easy to find data within a particular range during a scan.
+  - **간단한 조회**: 데이터의 특정 부분을 어떤 노드가 담당하는지 알기 때문에, 쿼리는 원하는 데이터를 찾을 수 있는 위치를 빨리 찾을 수 있습니다.
+  - **효율적인 검색**: 데이터가 정렬되어 있기 때문에, 검색을 하는 동안 특정 레인지의 데이터를 쉽게 찾을 수 있습니다.
 
-### Monolithic sorted map structure
+### 모놀리식 정렬 맵 구조
 
-The monolithic sorted map is comprised of two fundamental elements:
+모놀리식 정렬 맵은 두 가지 기본요소로 구성됩니다:
 
-- System data, which include **meta ranges** that describe the locations of data in your cluster (among many other cluster-wide and local data elements)
-- User data, which store your cluster's **table data**
+- 시스템 데이터, 클러스터의 데이터 위치(클러스터 전반에 걸쳐 퍼져있는)를 표현하는 **메타 레인지**가 포함됩니다.
+- 유저 데이터, 클러스터의 **테이블 데이터**를 저장합니다.
 
-#### Meta ranges
+#### 메타 레인지
 
-The locations of all ranges in your cluster are stored in a two-level index at the beginning of your key-space, known as meta ranges, where the first level (`meta1`) addresses the second, and the second (`meta2`) addresses data in the cluster. Importantly, every node has information on where to locate the `meta1` range (known as its range descriptor, detailed below), and the range is never split.
+클러스터의 모든 레인지 위치는 키 공간 시작부터 2단계 인덱스로 저장되며, 첫 번째 레벨(`meta1`) 은 두 번째 레벨의 주소이고, 두 번째(`meta2`)는 클러스터의 데이터 주소입니다. 중요한 것은, 모든 노드가 `meta1` 레인지(레인지 디스크립터라고 불리며, 아래에 세부설명은 아래에 있음)를 찾을 위치에 대한 정보를 가지고 있고, 레인지는 절대 분할되지 않는다는 점입니다.
 
-This meta range structure lets us address up to 4EiB of user data by default: we can address 2^(18 + 18) = 2^36 ranges; each range addresses 2^26 B, and altogether we address 2^(36+26) B = 2^62 B = 4EiB. However, with larger range sizes, it's possible to expand this capacity even further.
+이 메타 레인지 구조로 최대 4EiB의 사용자 데이터를 처리가능합니다: 우리는 2^(18 + 18) = 2^36 개의 레인지를 수용가능합니다; 각 레인지는 2^26 B를 가리키므로, 총 2^(36+26) B = 2^62 B = 4EiB의 주소를 지정합니다. 또, 더 큰 레인지가 필요하다면 추후에 이 용량을 더 확장할 수 있습니다.
 
-Meta ranges are treated mostly like normal ranges and are accessed and replicated just like other elements of your cluster's KV data.
+메타 레인지는 일반 레인지처럼 처리되며 클러스터 KV 데이터의 다른 요소와 마찬가지로 접근되고 복제됩니다.
 
-Each node caches values of the `meta2` range it has accessed before, which optimizes access of that data in the future. Whenever a node discovers that its `meta2` cache is invalid for a specific key, the cache is updated by performing a regular read on the `meta2` range.
+각 노드는 이전에 접근한 `meta2` 레인지 값을 캐시하여 이후 해당 데이터에 대한 접근을 최적화합니다. 노드가 특정 키에 대한 `meta2` 캐시가 유효하지 않은 것을 발견할 때마다, `meta2` 레인지에 대한 정규 읽기를 수행하여 갱신합니다.
 
-#### Table data
+#### 테이블 데이터
 
-After the node's meta ranges is the KV data your cluster stores.
+노트의 메타 레인지 다음은 클러스터에 저장된 KV 데이터입니다.
 
-Each table and its secondary indexes initially map to a single range, where each key-value pair in the range represents a single row in the table (also called the primary index because the table is sorted by the primary key) or a single row in a secondary index. As soon as a range reaches 64 MiB in size, it splits into two ranges. This process continues as a table and its indexes continue growing. Once a table is split across multiple ranges, it's likely that the table and secondary indexes will be stored in separate ranges. However, a range can still contain data for both the table and a secondary index. 
+각 테이블과 보조 인덱스는 최초에 하나의 레인지로 매핑됩니다. 여기서 키-밸류 쌍은 테이블의 단일 행(테이블이 기본키로 정렬되기 때문에 기본 인덱스라고도 함) 또는 보조 인덱스를 나타냅니다. 레인지 크기가 64MiB가 되면, 두 개의 레인지로 나뉩니다. 이 프로세스는 테이블에서 계속 진행되며 인덱스는 계속 증가합니다. 테이블이 여러 레인지로 분할되면, 테이블과 보조 인덱스가 분산된 레인지에 저장될 가능성이 큽니다. 그러나, 레인지는 여전히 테이블과 보조 인덱스를 포함할 수 있습니다.
 
-The default 64MiB range size represents a sweet spot for us between a size that's small enough to move quickly between nodes, but large enough to store a meaningfully contiguous set of data whose keys are more likely to be accessed together. These ranges are then shuffled around your cluster to ensure survivability.
+기본값인 64MiB 레인지 크기는 노드 사이에서 빠르게 이동하기에 충분히 작은 크기이고, 함께 접근될 가능성이 높은 데이터가 의미있을 만큼 인접해서 저장할만큼 충분히 큽니다. 이 레인지들은 생존성을 보장하기 위해 클러스터에 퍼집니다.
 
-These table ranges are replicated (in the aptly named replication layer), and have the addresses of each replica stored in the `meta2` range.
+이 테이블 레인지는 복제되며(복제 계층에서), 각 레플리카의 주소는 `meta2` 레인지에 저장합니다.
 
-### Using the monolithic sorted map
+### 모놀리식 정렬 맵 구조 사용하기
 
-When a node receives a request, it looks at the meta ranges to find out which node it needs to route the request to by comparing the keys in the request to the keys in its `meta2` range.
+노드는 요청을 받으면, 메타 레인지를 확인하여 요청의 키를 `meta2` 레인지의 키와 비교하여 요청을 전달할 노드를 찾습니다.
 
-These meta ranges are heavily cached, so this is normally handled without having to send an RPC to the node actually containing the `meta2` ranges.
+이 메타 레인지는 많이 캐시되기 때문에, 보통 RPC를 보낼 필요 없이 `meta2` 레인지를 포함하는 노드로 이동합니다.
 
-The node then sends those KV operations to the leaseholder identified in the `meta2` range. However, it's possible that the data moved, in which case the node that no longer has the information replies to the requesting node where it's now located. In this case we go back to the `meta2` range to get more up-to-date information and try again.
+노드는 `meta2` 레인지에서 식별한 리스홀더에게 KV 작업을 보냅니다. 그러나, 데이터가 이동되었을 수 있는데, 이 경우 정보가 없는 노드는 요청 노드에게 데이터가 없다고 응답합니다. 그러면 `meta2` 레인지로 돌아가 최신 정보를 얻어 다시 시도합니다.
 
-### Interactions with other layers
+### 다른 계층과의 상호작용
 
-In relationship to other layers in CockroachDB, the distribution layer:
+카크로치디비에서 분산 계층의 다른 계층과의 상호작용은 다음과 같습니다:
 
-- Receives requests from the transaction layer on the same node.
-- Identifies which nodes should receive the request, and then sends the request to the proper node's replication layer.
+- 동일 노드의 트랜잭션 계층으로부터 요청을 받습니다.
+- 요청을 받아야 하는 노드를 식별한 다음, 해당 노드의 복제 계층으로 요청을 전송합니다.
 
-## Technical details and components
+## 기술 세부사항과 구성요소
 
 ### gRPC
 
-gRPC is the software nodes use to communicate with one another. Because the distribution layer is the first layer to communicate with other nodes, CockroachDB implements gRPC here.
+gRPC는 노드가 서로 통신하기 위해 사용하는 소프트웨어입니다. 배포 계층은 다른 노드와 통신하기 위한 첫 계층이므로 카크로치디비는 gRPC를 여기에 구현합니다.
 
-gRPC requires inputs and outputs to be formatted as protocol buffers (protobufs). To leverage gRPC, CockroachDB implements a protocol-buffer-based API defined in `api.proto`.
+gRPC는 입출력을 프로토콜 버퍼(protobufs)를 사용합니다. gRPC를 활용하기 위해 카크로치디비는 `api.proto`에 정의된 프로토콜 버퍼 기반 API를 구현합니다.
 
-For more information about gRPC, see the [official gRPC documentation](http://www.grpc.io/docs/guides/).
+gRPC에 대한 더 자세한 내용은, [공식 gRPC 문서](http://www.grpc.io/docs/guides/)를 확인하십시오.
 
 ### BatchRequest
 
-All KV operation requests are bundled into a [protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers), known as a `BatchRequest`. The destination of this batch is identified in the `BatchRequest` header, as well as a pointer to the request's transaction record. (On the other side, when a node is replying to a `BatchRequest`, it uses a protobuf––`BatchResponse`.)
+모든 KV 작업 요청은 [protobuf](https://en.wikipedia.org/wiki/Protocol_Buffers)에 묶여 제공되며 `BatchRequest`이라고 불립니다. 이 일괄처리의 목적지는 `BatchRequest` 헤더에 있는, 트랜잭션 레코드로 식별됩니다.(노드가 `BatchRequest`에 응답할 때는 protobuf의 `BatchResponse`을 사용합니다.)
 
-This `BatchRequest` is also what's used to send requests between nodes using gRPC, which accepts and sends protocol buffers.
+이 `BatchRequest`은 gRPC(protocol buffers를 쓰는)를 사용하여 노드간에 요청을 보낼 때도 사용합니다.
 
 ### DistSender
 
-The gateway/coordinating node's `DistSender` receives `BatchRequest`s from its own `TxnCoordSender`. `DistSender` is then responsible for breaking up `BatchRequests` and routing a new set of `BatchRequests` to the nodes it identifies contain the data using its `meta2` ranges.  It will use the cache to send the request to the leaseholder, but it's also prepared to try the other replicas, in order of "proximity." The replica that the cache says is the leaseholder is simply moved to the front of the list of replicas to be tried and then an RPC is sent to all of them, in order.
+게이트웨이/조정 노드의 `DistSender`는 자신의 `TxnCoordSender`에서 `BatchRequest`를 받습니다. `DistSender`는 `BatchRequests`를 해제하고 `meta2` 레인지를 사용하여 새로운 `BatchRequests`들을 전달할 책임이 있습니다. 캐시를 이용해 리스홀더에게 요청을 보내며, "근접"한 순서로 다른 레플리카에 보낼 준비를 하고 있습니다. 캐시에서 리스홀더로 확인된 레플리카를 목록의 처음으로 이동시킨 후 모든 레플리카에 RPC를 순서대로 보냅니다.
 
-Requests received by a non-leaseholder fail with an error pointing at the replica's last known leaseholder. These requests are retried transparently with the updated lease by the gateway node and never reach the client.
+리스홀더가 아닌 노드에서 요청이 오면 마지막으로 확인된 리스홀더를 가리키는 에러와 함께 실패합니다. 이러한 요청은 게이트웨이 노드에 의해 갱신된 리스홀더로 재시도되고 클라이언트에 절대 전돨되지 않습니다.
 
-As nodes begin replying to these commands, `DistSender` also aggregates the results in preparation for returning them to the client.
+노드가 이러한 명령에 대한 응답을 시작하면, `DistSender`는 결과를 클라이언트에 반한화기 위해 집계합니다.
 
-### Meta range KV structure
+### 메타 레인지 KV 구조
 
-Like all other data in your cluster, meta ranges are structured as KV pairs. Both meta ranges have a similar structure:
+클러스터의 다른 모든 데이터와 마찬가지로, 메타 레인지는 KV 쌍으로 구성됩니다. 두 메타 레인지 모두 비슷한 구조를 가집니다:
 
 ~~~
 metaX/successorKey -> LeaseholderAddress, [list of other nodes containing data]
 ~~~
 
-Element | Description
+요소 | 설명
 --------|------------------------
-`metaX` | The level of meta range. Here we use a simplified `meta1` or `meta2`, but these are actually represented in `cockroach` as `\x02` and `\x03` respectively.
-`successorKey` | The first key *greater* than the key you're scanning for. This makes CockroachDB's scans efficient; it simply scans the keys until it finds a value greater than the key it's looking for, and that is where it finds the relevant data.<br/><br/>The `successorKey` for the end of a keyspace is identified as `maxKey`.
-`LeaseholderAddress` | The replica primarily responsible for reads and writes, known as the leaseholder. The replication layer contains more information about [leases](replication-layer.html#leases).
+`metaX` | 메타 레인지의 레벨입니다. 우리는 `meta1` 또는 `meta2`로 단순화했지만, 실재 `cockroach`는 `\x02`와 `\x03`으로 표현합니다. |
+`successorKey` | 당신의 조회할 키보다 *큰* 첫 키입니다. 이것은 카크로치디비의 조회를 효율적으로 만듭니다; 찾고자 하는 키보다 큰 값을 찾을 때까지 키를 스캔하기만 하면 관련 데이터를 찾을 수 있습니다.<br/><br/>키 공간의 끝에 대한 `successorKey`는 `maxKey`로 식별됩니다.
+`LeaseholderAddress` | 리스홀더로 알려진, 읽기와 쓰기를 담당하는 레플리카입니다. 복제 계층에는 [리스](replication-layer.html#leases)에 대한 더 자세한 내용이 포함되어 있습니다. |
 
-Here's an example:
+다음은 그 예입니다:
 
 ~~~
 meta2/M -> node1:26257, node2:26257, node3:26257
 ~~~
 
-In this case, the replica on `node1` is the leaseholder, and nodes 2 and 3 also contain replicas.
+이 경우, `node1`은 레플리카는 리스홀더이고, 노드 2와 3도 레플리카를 가지고 있습니다.
 
-#### Example
+#### 예
 
-Let's imagine we have an alphabetically sorted column, which we use for lookups. Here are what the meta ranges would approximately look like:
+조회를 위해 알파벳 순으로 정렬된 열이 있다고 가정해봅시다. 다음은 메타 레인지의 대략적인 모습입니다:
 
-1. `meta1` contains the address for the nodes containing the `meta2` replicas.
+1. `meta1`은 `meta2` 레플리카를 포함하는 노드의 주소를 포합합니다.
 
     ~~~
     # Points to meta2 range for keys [A-M)
@@ -121,7 +121,7 @@ Let's imagine we have an alphabetically sorted column, which we use for lookups.
     meta1/maxKey -> node4:26257, node5:26257, node6:26257
     ~~~
 
-2. `meta2` contains addresses for the nodes containing the replicas of each range in the cluster, the first of which is the [leaseholder](replication-layer.html#leases).
+2. `meta2`는 클러스터의 각 레인지 레플리카를 포함하는 노드에 대한 주소를 포함하며, 첫 번째 노드는 [리스홀더](replication-layer.html#leases)입니다.
 
     ~~~
     # Contains [A-G)
@@ -137,50 +137,50 @@ Let's imagine we have an alphabetically sorted column, which we use for lookups.
     meta2/maxKey->  node4:26257, node5:26257, node6:26257
     ~~~
 
-### Table data KV structure
+### 테이블 데이터 KV 구조
 
-Key-value data, which represents the data in your tables using the following structure:
+테이블의 데이터를 나카내는 키-밸류 데이터는 다음 구조를 사용합니다:
 
 ~~~
 /<table Id>/<index id>/<indexed column values> -> <non-indexed/STORING column values>
 ~~~
 
-The table itself is stored with an `index_id` of 1 for its `PRIMARY KEY` columns, with the rest of the columns in the table considered as stored/covered columns.
+테이블 자체는 `기본키` 열에 대해 `index_id`가 1로 저장되고, 테이블의 나머지 열은 저장/포함된 열로 간주됩니다.
 
-### Range descriptors
+### 레인지 디스크립터
 
-Each range in CockroachDB contains metadata, known as a range descriptor. A range descriptor is comprised of the following:
+카크로치디비의 각 레인지에는 레인지 디스크립터로 알려진 메타데이터가 포함되어 있습니다. 레인지 디스크립터는 다음으로 구성됩니다:
 
-- A sequential RangeID
-- The keyspace (i.e., the set of keys) the range contains; for example, the first and last `<indexed column values>` in the table data KV structure above. This determines the `meta2` range's keys.
-- The addresses of nodes containing replicas of the range, with its leaseholder (which is responsible for its reads and writes) in the first position. This determines the `meta2` range's key's values.
+- 연속적인 레인지 식별자
+- 레인지가 포함한 키공간(즉, 키 집합); 예를 들어, 테이블의 KV 구조에서 처음과 마지막의 `<인덱스된 열 값>`. 이것은 `meta2` 레인지의 키들 결정합니다.
+- 첫 번째 위치에 리스홀더(읽기와 쓰기를 책임지는)가 있는, 레인지 복제본을 포함하는 주소들. 이것은 `meta2` 레인지의 키 값을 결정합니다.
 
-Because range descriptors comprise the key-value data of the `meta2` range, each node's `meta2` cache also stores range descriptors.
+레인지 디스크립터는 `meta2` 레인지의 키-밸류 데이터를 포함하기 때문에, 각 노드의 `meta2` 캐시는 레인지 디스크립터도 포합합니다.
 
-Range descriptors are updated whenever there are:
+레인지 디스크립터는 다음과 같은 경우에 업데이트됩니다:
 
-- Membership changes to a range's Raft group (discussed in more detail in the [Replication Layer](replication-layer.html#membership-changes-rebalance-repair))
-- Leaseholder changes
-- Range splits
+- 레인지 Raft 그룹에 대한 멤버십 변경(자세한 내용은 [복제 계층](replication-layer.html#membership-changes-rebalance-repair)에서 다루어짐)
+- 리스홀더 변경
+- 레인지 분할
 
-All of these updates to the range descriptor occur locally on the range, and then propagate to the `meta2` range.
+레인지 디스크립터에 대한 업데이트는 로컬 레인지에서 발생하고, `meta2` 레인지로 전파됩니다.
 
-### Range splits
+### 레인지 분할
 
-By default, CockroachDB attempts to keep ranges/replicas at 64MiB. Once a range reaches that limit we split it into two 32 MiB ranges (composed of contiguous key spaces).
+기본적으로, 카크로치디비는 레인지/레플리카를 64MiB로 유지하려고 합니다. 레인지가 한계에 도달하면 이를 두 개의 32MiB 레인지(인접한 키 공간으로 구성)로 분할합니다.
 
-During this range split, the node creates a new Raft group containing all of the same members as the range that was split. The fact that there are now two ranges also means that there is a transaction that updates `meta2` with the new keyspace boundaries, as well as the addresses of the nodes using the range descriptor.
+이 레인지 분할 과정에 노드는 분할된 레인지와 동일한 구성원을 모두 포함하는 새로운 Raft 그룹을 만듭니다. 두 레인지가 생기면 레인지 디스크립터를 사용하는 노드의 주소 뿐만 아니라, `meta2`를 새로운 키공간의 경계로 업데이트하는 트랜잭션이 만들어집니다.
 
-## Technical interactions with other layers
+## 다른 계층과의 기술적인 상호작용
 
-### Distribution and transaction layer
+### 분산과 트랜잭션 계층
 
-The Distribution layer's `DistSender` receives `BatchRequests` from its own node's `TxnCoordSender`, housed in the Transaction layer.
+분산 계층의 `DistSender`는 자기 노드의 트랜잭션 계층에 있는 `TxnCoordSender`로부터 `BatchRequests`를 받습니다.
 
-### Distribution and replication layer
+### 분산과 복제 계층
 
-The Distribution layer routes `BatchRequests` to nodes containing ranges of data, which is ultimately routed to the Raft group leader or leaseholder, which are handled in the replication layer.
+분산 계층은 `BatchRequests`를 데이터를 포함하는 레인지들로 전송하며, 궁극적으로 복제 계층에서  Raft 그룹 리더 또는 리스홀더에게 전달됩니다.
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-Learn how CockroachDB copies data and ensures consistency in the [replication layer](replication-layer.html).
+카크로치디비가 어떻게 데이터를 카피하고 이를 보장하는지 [복제 계층](replication-layer.html)에서 알아봅시다.
