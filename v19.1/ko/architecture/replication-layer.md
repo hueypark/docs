@@ -1,152 +1,152 @@
 ---
-title: Replication Layer
-summary: The replication layer of CockroachDB's architecture copies data between nodes and ensures consistency between copies.
+title: 복제 계층
+summary: 카크로치디비 아키텍처의 복제 계층은 노드 간 데이터를 복사하고 복사본 간의 일관성을 보장합니다.
 toc: true
 ---
 
-The replication layer of CockroachDB's architecture copies data between nodes and ensures consistency between these copies by implementing our consensus algorithm.
+카크로치디비 아키텍처의 복제 계층은 합의 알고리즘 구현을 통해 노드 간 데이터를 복사하고 복사본 간의 일관성을 보장합니다.
 
 {{site.data.alerts.callout_info}}
-If you haven't already, we recommend reading the [Architecture Overview](overview.html).
+[아키텍처 개요](overview.html)를 먼저 읽어보는 것을 권장합니다.
 {{site.data.alerts.end}}
 
-## Overview
+## 개요
 
-High availability requires that your database can tolerate nodes going offline without interrupting service to your application. This means replicating data between nodes to ensure the data remains accessible.
+고가용성을 위해 데이터베이스는 애플리케이션의 서비스를 방해하지 않고 오프라인 상태가 되는 노드를 허용할 수 있어야 합니다. 이는 노드 간에 데이터를 복제하여 데이터에 계속 접근 할 수 있음을 의미합니다.
 
-Ensuring consistency with nodes offline, though, is a challenge many databases fail. To solve this problem, CockroachDB users a consensus algorithm to require that a quorum of replicas agrees on any changes to a range before those changes are committed. Because 3 is the smallest number that can achieve quorum (i.e., 2 out of 3), CockroachDB's high availability (known as multi-active availability) requires 3 nodes.
+하지만 노드가 오프라인되는 상황에서 일관성을 유지하는 것은, 많은 데이터베이스가 실패하는 도전적인 문제입니다. 이 문제를 해결하기 위해 카크로치디비는 레플리카의 쿼럼이 변경사항 커밋 전에 레인지 변경에 동의해야 하는 합의 알고리즘을 사용합니다. 3개가 쿼럼(즉, 3개 중 2개)을 만들 수 있는 가장 작은 값이기 때문에 고가용성(멀티 액티브 가용성이라고 알려진)에는 3개의 노드가 필요합니다.
 
-The number of failures that can be tolerated is equal to *(Replication factor - 1)/2*. For example, with 3x replication, one failure can be tolerated; with 5x replication, two failures, and so on. You can control the replication factor at the cluster, database, and table level using [replication zones](../configure-replication-zones.html).
+허용할 수 있는 실패의 수는 *(레플리카 수 -1)/2* 입니다. 예를 들어 3배수 레플리카를 사용하면 하나의 실패가 허용되고, 5배수는 2개의 실패가 허용됩니다. [복제 영역](../configure-replication-zones.html)을 사용하여 클러스터, 데이터베이스 및 테이블 수준에서 레플리카 수를 제어할 수 있습니다.
 
-When failures happen, though, CockroachDB automatically realizes nodes have stopped responding and works to redistribute your data to continue maximizing survivability. This process also works the other way around: when new nodes join your cluster, data automatically rebalances onto it, ensuring your load is evenly distributed.
+장애가 발생하면, 카크로치디비는 노드가 응답을 중지한 것을 자동으로 인식하고 생존성을 최대화하기 위해 자동으로 데이터를 재분배합니다. 이 프로세스는 다른 방법으로도 작동합니다: 새 노드가 클러스터에 가입하면 데이터가 자동으로 리밸런스되어 부하가 고르게 분산되도록 합니다.
 
-### Interactions with other layers
+### 다른 계층과의 상호작용
 
-In relationship to other layers in CockroachDB, the replication layer:
+카크로치디비의 다른 계층과 복제 계층의 상호작용은:
 
-- Receives requests from and sends responses to the distribution layer.
-- Writes accepted requests to the storage layer.
+- 분산 계층으로부터 요청을 받고 응답을 보냅니다.
+- 허용된 요청을 스토리지 계층에 씁니다.
 
-## Components
+## 구성요소
 
 ### Raft
 
-Raft is a consensus protocol––an algorithm which makes sure that your data is safely stored on multiple machines, and that those machines agree on the current state even if some of them are temporarily disconnected.
+Raft는 데이터가 안전하게 여러 대의 장비에 저장되도록 하고, 일부 장비가 일시적으로 연결이 끊긴 경우에도 상태를 유지하는 합의 프로토콜입니다.
 
-Raft organizes all nodes that contain a replica of a range into a group--unsurprisingly called a Raft group. Each replica in a Raft group is either a "leader" or a "follower". The leader, which is elected by Raft and long-lived, coordinates all writes to the Raft group. It heartbeats followers periodically and keeps their logs replicated. In the absence of heartbeats, followers become candidates after randomized election timeouts and proceed to hold new leader elections.
+Raft는 레인지 레플리카를 포함하는 모든 노드를 Raft 그룹으로 구성합니다. Raft 그룹의 각 복제본은 "리더" 또는 "팔로워"입니다. Raft에 의해 선출된 리더는 그룹에 대한 모든 쓰기를 조정합니다. 리더는 팔로워에게 정기적으로 하트비트를 보내고 로그를 복제합니다. 하트비트가 없으면 팔로워는 임의의 시간 초과후 새로운 리더 선거를 진행합니다.
 
-Once a node receives a `BatchRequest` for a range it contains, it converts those KV operations into Raft commands. Those commands are proposed to the Raft group leader––which is what makes it ideal for the [leaseholder](#leases) and the Raft leader to be one in the same––and written to the Raft log.
+노드가 포함하는 레인지에 대한 `BatchRequest`를 받으면, KV 작업을 Raft 명령으로 변환합니다. 이러한 명령은 Raft 그룹 리더에게 제안되어--[리스홀더](#leases)와 Raft리더가 같은 장소에 있는 것이 이상적인 이유-- Raft로그에 기록됩니다.
 
-For a great overview of Raft, we recommend [The Secret Lives of Data](http://thesecretlivesofdata.com/raft/).
+Raft에 대한 훌륭한 설명으로, [The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)을 추천드립니다.
 
-#### Raft logs
+#### Raft 로그
 
-When writes receive a quorum, and are committed by the Raft group leader, they're appended to the Raft log. This provides an ordered set of commands that the replicas agreed on and is essentially the source of truth for consistent replication.
+쓰기가 쿼럼을 받고, Raft 그룹 리더에 의해 커밋되면, 그것은 Raft 로그에 추가됩니다. 이것은 복제본에게 동일한 명령어 목록을 제공하며, 진정으로 일관된 복제를 위한 필수요소입니다.
 
-Because this log is treated as serializable, it can be replayed to bring a node from a past state to its current state. This log also lets nodes that temporarily went offline to be "caught up" to the current state without needing to receive a copy of the existing data in the form of a snapshot.
+이 로그는 시리얼라이즈되어 처리되므로, 노드를 과거부터 현재 상태까지 리플레이할 수 있습니다. 또한 이 로그는 일시적으로 오프라인 상태가 된 노드를 스냅샷 없이 현재 상태로 "따라올" 수 있게 합니다.
 
-### Snapshots
+### 스냅샷
 
-Each replica can be "snapshotted", which copies all of its data as of a specific timestamp (available because of [MVCC](storage-layer.html#mvcc)). This snapshot can be sent to other nodes during a rebalance event to expedite replication.
+각 레플리카는 특정 타임스탬프에서([MVCC](storage-layer.html#mvcc)에 의해 가능) 데이터를 모두 복사하는 "스냅샷"을 할 수 있습니다. 이 스냅샷은 리밸런스 중 다른 노드로 보내져 복제를 촉진할 수 있습니다.
 
-After loading the snapshot, the node gets up to date by replaying all actions from the Raft group's log that have occurred since the snapshot was taken.
+스냅샷을 로드 한 후, 노드는 Raft 그룹 로그에서 스냅샷 생성 이후 발생한 모든 작업을 리플레이하여 최신 상태가 됩니다.
 
-### Leases
+### 리스
 
-A single node in the Raft group acts as the leaseholder, which is the only node that can serve reads or propose writes to the Raft group leader (both actions are received as `BatchRequests` from [`DistSender`](distribution-layer.html#distsender)).
+Raft 그룹의 한 노드는 Rfat 그룹 리더에게 읽기와 쓰기를 할 수 있는 유일한 노드인 리스홀더로 역할합니다(두 동작 모두 `BatchRequests`로 [`DistSender`](distribution-layer.html#distsender)에서 받음).
 
-When serving reads, leaseholders bypass Raft; for the leaseholder's writes to have been committed in the first place, they must have already achieved consensus, so a second consensus on the same data is unnecessary. This has the benefit of not incurring networking round trips required by Raft and greatly increases the speed of reads (without sacrificing consistency).
+읽기를 처리할 때 리스홀더는 Raft를 우회합니다; 이미 리스홀더의 쓰기가 커밋되어, 이미 합의를 이루었기 때문에, 동일한 데이터에 대한 두 번째 합의는 불필요합니다. 이것은 Raft가 요구하는 네트워크 라운드 트립을 발생시키지 않는 이점이 있으며 읽기 속도를 크게 향상시킵니다(일관성에 희생없이).
 
-CockroachDB attempts to elect a leaseholder who is also the Raft group leader, which can also optimize the speed of writes.
+카르로치디비는 Raft 그룹 리더를 리스홀더로 선출하려고 하며, 이것으로 쓰기 속도가 최적확됩니다.
 
-If there is no leaseholder, any node receiving a request will attempt to become the leaseholder for the range. To prevent two nodes from acquiring the lease, the requester includes a copy of the last valid lease it had; if another node became the leaseholder, its request is ignored.
+리스홀더가 없는 경우, 요청을 받은 노드는 해당 레인지의 리스홀더가 되려고 합니다. 두 노드가 리스를 얻는 것을 막기 위해, 요청자는 마지막으로 유효한 리스의 사본의 포함하며; 다른 노드가 리스홀더가 되면 이 요청은 무시됩니다.
 
-#### Co-location with Raft leadership
+#### Raft 리더십과 함깨 배치
 
-The range lease is completely separate from Raft leadership, and so without further efforts, Raft leadership and the Range lease might not be held by the same replica. However, we can optimize query performance by making the same node both Raft leader and the leaseholder; it reduces network round trips if the leaseholder receiving the requests can simply propose the Raft commands to itself, rather than communicating them to another node.
+레인지 리스와 Raft 리더십은 완전 별개이므로, 노력을 기울이지 않으면, Raft 리더십과 레인지 리스가 같은 레플리카에 유지되지 않습니다. 그러나 Raft 리더와 리스홀더를 동일 노드로 만들어 쿼리 성능을 최적화할 수 있습니다; 요청을 받은 리스홀더가 다른 노드와 통신하지 않고 Raft 명령을 할 수 있으면, 네트워크 라운드 트립을 줄일 수 있습니다.
 
-To achieve this, each lease renewal or transfer also attempts to collocate them. In practice, that means that the mismatch is rare and self-corrects quickly.
+이를 달성하기 위해, 각 리스는 갱신 또는 양도되어 함께 배치됩니다. 실제로 불일치는 드믈고 스스로 정정됩니다.
 
-#### Epoch-based leases (table data)
+#### Epoch 기반 리스(테이블 데이터)
 
-To manage leases for table data, CockroachDB implements a notion of "epochs," which are defined as the period between a node joining a cluster and a node disconnecting from a cluster. When the node disconnects, the epoch is considered changed, and the node immediately loses all of its leases.
+테이블 데이터의 리스를 관리하기 위해 카크로치디비는 클러스터 가입하는 노드와 연결해제된 노드 사이의 기간으로 정의되든 "epochs" 개념을 구현합니다. 노드 연결이 끊어지면 epoch가 변경된 것으로 간주되며 노드는 즉시 모든 리스를 잃습니다.
 
-This mechanism lets us avoid tracking leases for every range, which eliminates a substantial amount of traffic we would otherwise incur. Instead, we assume leases do not expire until a node loses connection.
+이 메커니즘을 통해 모든 레인지에 대해 리스 추적을 하지 않을 수 있으며, 이는 상당한 양의 트래픽을 감소시킵니다. 대신 우리는 노드의 연결이 끊어질 때까지 리스가 만료되지 않는다고 가정합니다.
 
-#### Expiration-based leases (meta and system ranges)
+#### 만료 기반 리스 (메타와 시스템 레인지)
 
-Your table's meta and system ranges (detailed in the distribution layer) are treated as normal key-value data, and therefore have leases, as well. However, instead of using epochs, they have an expiration-based lease. These leases simply expire at a particular timestamp (typically a few seconds)––however, as long as the node continues proposing Raft commands, it continues to extend the expiration of the lease. If it doesn't, the next node containing a replica of the range that tries to read from or write to the range will become the leaseholder.
+테이블 메타와 시스템 레인지(분산 계층에서 자세히 다룸)는 일반적인 키-밸류 데이터이므로, 리스를 가지고 있습니다. 하지만 epochs 대신 만료 기반 리스를 사용합니다. 이 리스는 특정 타임스탬프(일반적으로 수 초)에 만료됩니다--단, 노드가 Raft 명령을 계속 하면, 만료 기간을 연장합니다. 만약 없다면, 읽거나 쓰기가 시도되는 레인지의 레플리카를 가진 노드가 리스홀더가 됩니다.
 
-#### Leaseholder rebalancing
+#### 리스홀더 리밸런싱
 
-Because CockroachDB serves reads from a range's leaseholder, it benefits your cluster's performance if the replica closest to the primary geographic source of traffic holds the lease. However, as traffic to your cluster shifts throughout the course of the day, you might want to dynamically shift which nodes hold leases.
+카크로치디비의 레인지는 리스홀더에서 읽기를 제공하기 때문에 트래픽의 주요 지리적 위치에 가까운 레플리카가 리스를 보유하고 있으면 클러스터 성능에 도움이 됩니다. 하지만 클러스터 트래픽은 하루 종일 이동하므로, 리스를 보유한 노드를 동적으로 변경할 필요가 있습니다.
 
 {{site.data.alerts.callout_info}}
 
-This feature is also called [Follow-the-Workload](http://localhost:4000/docs/stable/demo-follow-the-workload.html) in our documentation.
+이 기능은 [Follow-the-Workload](http://localhost:4000/docs/stable/demo-follow-the-workload.html) 문서에서 확인가능합니다.
 
 {{site.data.alerts.end}}
 
-Periodically (every 10 minutes by default in large clusters, but more frequently in small clusters), each leaseholder considers whether it should transfer the lease to another replica by considering the following inputs:
+주기적으로(대규모 클러스터에서는 기본적으로 10분마다, 작은 클러스터에서는 보다 자주), 각 리스홀더는 다음 입력을 고려하여 리스를 다은 복제본으로 전송해야하는지 여부를 판단합니다:
 
-- Number of requests from each locality
-- Number of leases on each node
-- Latency between localities
+- 각 지역의 요청 수
+- 각 노드의 리스 수
+- 지역간 대기시간
 
-##### Intra-locality
+##### 인트라-지역
 
-If all the replicas are in the same locality, the decision is made entirely on the basis of the number of leases on each node that contains a replica, trying to achieve a roughly equitable distribution of leases across all of them. This means the distribution isn't perfectly equal; it intentionally tolerates small deviations between nodes to prevent thrashing (i.e., excessive adjustments trying to reach an equilibrium).
+모든 레플리카가 동일한 지역에 있는 경우, 복제본을 포함하는 노드의 리스 수를 기준으로 균등한 분배를 하려고 노력합니다. 이는 분포가 완전히 동일하지 않다는 것을 의미합니다; 스래싱(평형에 도달하려고 하는 과도한 조정)을 방지하기 위해 노드 간 작은 편차를 의도적으로 허용합니다.
 
-##### Inter-locality
+##### 인터-지역
 
-If replicas are in different localities, CockroachDB attempts to calculate which replica would make the best leaseholder, i.e., provide the lowest latency.
+레플리카가 다른 지역에 있는 경우 카크로치디비는 어느 레플리카가 최상의 리스홀더가 될지, 즉 가장 낮은 대기시간을 제공하는지 계산합니다.
 
-To enable dynamic leaseholder rebalancing, a range's current leaseholder tracks how many requests it receives from each locality as an exponentially weighted moving average. This calculation results in the locality that has recently requested the range most often being assigned the greatest weight. If another locality then begins requesting the range very frequently, this calculation would shift to assign the second region the greatest weight.
+동적인 리스홀더 리밸런싱을 위해, 현재 레인지 리스홀더는 각 지역에서 오는 요청의 수를 지수가중이동평균으로 추적합니다. 이는 최근 레인지에 가장 큰 가중치로 요청한 지역을 계산합니다. 이후 다른 지역이 매우 자주 레인지를 요청하기 시작하면, 두 번째 지역을 가장 큰 가중치로 지정합니다.
 
-When checking for leaseholder rebalancing opportunities, the leaseholder correlates each requesting locality's weight (i.e., the proportion of recent requests) to the locality of each replica by checking how similar the localities are. For example, if the leaseholder received requests from gateway nodes in locality `country=us,region=central`, CockroachDB would assign the following weights to replicas in the following localities:
+리스홀더 리밴런싱을 시도할 때, 리스홀더는 지역이 얼마나 유사한지 확인하여 각 요청 지역의 가중치(즉, 최근 요청의 비율)를 각 레플리카의 지역과 연결합니다. 예를 들어, 리스홀더가 지역 `country=us,region=central`에 있는 게이트웨이 노드로부터 요청을 받으면, 카크로치디비는 다음 지역의 레플리카에 다음 가중치를 할당합니다:
 
-Replica locality | Replica rebalancing weight
+레플리카 지역 | 레플리카 리밸런싱 가중치
 -----------------|-------------------
-`country=us,region=central` | 100% because it is an exact match
-`country=us,region=east` | 50% because only the first locality matches
-`country=aus,region=central` | 0% because the first locality does not match
+`country=us,region=central` | 100% 완전 동일하기 때문
+`country=us,region=east` | 50% 첫 지역만 동일하기 때문
+`country=aus,region=central` | 0% 첫 지역이 다르기 떄문
 
-The leaseholder then evaluates its own weight and latency versus the other replicas to determine an adjustment factor. The greater the disparity between weights and the larger the latency between localities, the more CockroachDB favors the node from the locality with the larger weight.
+리스홀더는 스스로의 가중치와 대기시간을 다른 레플리카와 비교하여, 조정 요인을 결정합니다. 가중치 불일치가 커지고 지역간 대기시간이 길어질수록, 카크로치디비는 높은 가중치를 가진 지역의 노드를 선호하게 됩니다.
 
-When checking for leaseholder rebalancing opportunities, the current leaseholder evaluates each replica's rebalancing weight and adjustment factor for the localities with the greatest weights. If moving the leaseholder is both beneficial and viable, the current leaseholder will transfer the lease to the best replica.
+리스홀더 리밸런싱 여부를 확인할 때, 현재 리스홀더는 각 레플리카의 리밸런싱 가중치와 재조정 수치를 고려해 가장큰 가중치를 가진 지역을 선정합니다. 만약 리스홀더를 면경하는 것이 유익하고 유지가능하다면, 현재 리스홀더는 최고의 레플리카로 리스를 변경시킵니다.
 
-##### Controlling leaseholder rebalancing
+##### 리스홀더 리밸런싱 제어
 
-You can control leaseholder rebalancing through the `kv.allocator.load_based_lease_rebalancing.enabled` and `kv.allocator.lease_rebalancing_aggressiveness` [cluster settings](../cluster-settings.html).  Note that depending on the needs of your deployment, you can exercise additional control over the location of leases and replicas by [configuring replication zones](../configure-replication-zones.html).
+리스홀더 리밸런싱을 `kv.allocator.load_based_lease_rebalancing.enabled` 와 `kv.allocator.lease_rebalancing_aggressiveness` [클러스터 설정](../cluster-settings.html)으로 제어할 수 있습니다. 배포 요구사항에 따라 [복제 지역 설정](../configure-replication-zones.html)을 하여 리스와 레플리카의 위치를 추가로 제어할 수 있습니다.
 
-### Membership changes: rebalance/repair
+### 멤버십 변경: 리밸런스/리페어
 
-Whenever there are changes to a cluster's number of nodes, the members of Raft groups change and, to ensure optimal survivability and performance, replicas need to be rebalanced. What that looks like varies depending on whether the membership change is nodes being added or going offline.
+클러스터의 노드 수가 변경되면, Raft 그룹의 구성원이 변경되고 최적의 생존성과 성능을 보장하기 위해, 레플리카를 리밸런싱해야합니다. 멤버십 변경이 노드 추가인지 제거인지에 따라 다르게 동작합니다.
 
-- **Nodes added**: The new node communicates information about itself to other nodes, indicating that it has space available. The cluster then rebalances some replicas onto the new node.
+- **노드 추가**: 새 노드는 자신에 대한 정보를 다른 노드에 전달하여, 사용 공간이 있음을 나타냅니다. 그 다음 클러스터는 일부 레플리카를 새 노드로 재조정합니다.
 
-- **Nodes going offline**: If a member of a Raft group ceases to respond, after 5 minutes, the cluster begins to rebalance by replicating the data the downed node held onto other nodes.
+- **노드 제거**: Raft 그룹의 구성원이 응답을 중지하면, 5분 후, 클러스터는 다른 노드에 보관된 데이터를 복제하여 리밸런싱을 시작합니다.
 
-Rebalancing is achieved by using a snapshot of a replica from the leaseholder, and then sending the data to another node over [gRPC](distribution-layer.html#grpc). After the transfer has been completed, the node with the new replica joins that range's Raft group; it then detects that its latest timestamp is behind the most recent entries in the Raft log and it replays all of the actions in the Raft log on itself.
+리밸런싱은 리스홀더로부터 레플리카 스냅샷을 이용해 완료한 후, [gRPC](distribution-layer.html#grpc)를 통해 다른 노드로 보내서 수행됩니다. 전송이 완료되면 새 레플리카가 있는 노드가 해당 레인지의 Raft 그룹에 참여합니다; 그런 다음 최신 타임스탬프를 이용하여 그 이후에 있는 Raft 로그를 모두 감지하여 리플레이합니다.
 
-#### Load-based replica rebalancing
+#### 부하-기반 레플리카 리밸런싱
 
-In addition to the rebalancing that occurs when nodes join or leave a cluster, replicas are also rebalanced automatically based on the relative load across the nodes within a cluster. For more information, see the `kv.allocator.load_based_rebalancing` and `kv.allocator.qps_rebalance_threshold` [cluster settings](../cluster-settings.html).  Note that depending on the needs of your deployment, you can exercise additional control over the location of leases and replicas by [configuring replication zones](../configure-replication-zones.html).
+클러스터의 노드 추가 및 제거에 의해 발생하는 리밸런싱 외에, 레플리카들은 클러스터 내의 노드에 대한 상대적 부하를 기반으로 자동 리밸런싱됩니다. 자세한 내용은 [클러스터 설정](../cluster-settings.html)의 `kv.allocator.load_based_rebalancing`과 `kv.allocator.qps_rebalance_threshold`을 참조하십시오. 배포 요구사항에 따라 [복제 지역 설정](../configure-replication-zones.html)을 하여 리스와 레플리카의 위치를 추가로 제어할 수 있습니다.
 
-## Interactions with other layers
+## 다른 계층과의 상호작용
 
-### Replication and distribution layers
+### 복제와 분산 계층
 
-The replication layer receives requests from its and other nodes' `DistSender`. If this node is the leaseholder for the range, it accepts the requests; if it isn't, it returns an error with a pointer to which node it believes *is* the leaseholder. These KV requests are then turned into Raft commands.
+복제 계층은 자신과 다른 노드의 `DistSender`로부터 요청을 수신합니다. 이 노드가 리스홀더이면 요청을 처리합니다; 만약 아니면 리스홀더라고 *생각하는* 포인터가 포함된 오류를 반환합니다. 이 KV 요청은 Raft 명령으로 변환됩니다.
 
-The replication layer sends `BatchResponses` back to the distribution layer's `DistSender`.
+복제 계층은 `BatchResponses`를 분산 계층의 `DistSender`에게 보냅니다.
 
-### Replication and storage layers
+### 복제와 스토리지 계층
 
-Committed Raft commands are written to the Raft log and ultimately stored on disk through the storage layer.
+커밋된 Raft 명령은 Raft 로그에 기록되고 궁극적으로 스토리지 계층을 통해 디스크에 저장됩니다.
 
-The leaseholder serves reads from its RocksDB instance, which is in the storage layer.
+리스홀더는 스토리지 계층에 있는 RocksDB 인스턴스에서 읽기 작업을 수행합니다.
 
-## What's next?
+## 무엇을 더 알아볼까요?
 
-Learn how CockroachDB reads and writes data from disk in the [storage layer](storage-layer.html).
+카크로치디비가 어떻게 디스크에 데이터를 읽고 쓰는지 [스토리지 계층](storage-layer.html)에서 배워봅시다.
