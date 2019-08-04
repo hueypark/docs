@@ -1,97 +1,97 @@
 ---
-title: Contribute to CockroachDB
-summary: Contribute to the development of CockroachDB.
+title: 카크로치디비 컨트리뷰트
+summary: 카크로치디디 개발 컨트리뷰트
 toc: true
 ---
 
-We made CockroachDB source-available to empower developers to fix and extend the product to better meet their needs. Nothing thrills us more than people so passionate about the product that they‘re willing to spend their own time to learn the codebase and give back to the community. We created this doc so we can support contributors in a way that doesn’t sacrifice precious bandwidth that we use to serve our users and otherwise meet our business goals.
+카크로치디비는 소스코드를 공개하여 개발자가 제품을 수정하고 확장할 수 있게 합니다. 개인시간을 코드베이스를 배우고 커뮤니티에 환원하는 것에 사용하는 열정적인 사람은 우리를 열광하게 합니다. 우리는 사용자에게 서비스를 제공하고 비즈니스 목표를 달성하는 데 사용할 자원을 소모하지 않으면서, 컨트리뷰터를 지원하기 위해 이 문서를 만들었습니다.
 
 
-## Introduction
+## 소개
 
-A good way to find a project properly sized for a first time contributor is to search for open issues with the label ["help wanted"](https://github.com/cockroachdb/cockroach/labels/help%20wanted).
+새로운 컨트리뷰터가 적절한 크기의 프로젝트를 찾는 좋은 방법은 ["help wanted"](https://github.com/cockroachdb/cockroach/labels/help%20wanted) 레이블이 있는 미해결 이슈를 검색하는 것입니다.
 
-We separate three levels of complexity for projects:
+우리는 프로젝트를 세 가지 복잡도로 구분합니다:
 
-- **Low complexity:** You can work on these projects on your own and tell us afterwards about it. These are often tagged “easy” in our issues list.
-- **Medium complexity:** You can work on these projects on your own, but you should write an [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS) before you start implementing.
-- **High complexity:** You should discuss these projects with us before you start working on design or solution.
+- **낮은 복잡도:** 이 프로젝트에 대해 직접 작업하고 이후 우리에게 알려줄 수 있습니다. 이들은 종종 "easy"로 이슈 목록에 태깅됩니다.
+- **중간 복잡도:** 이 프로젝트는 독자적으로 작업할 수 있지만, 구현하기 전에 [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS)를 작성해야 합니다.
+- **높은 복잡도:** 디자인하거나 작업을 시작하기 전, 우리와 프로젝트에 대해 논의해야 합니다.
 
-Below you’ll find steps for contributing to the codebase; we’ve broken these down by complexity.
+아래에서 코드에 기여하는 방법을 찾을 수 있습니다; 우리는 이것을 복잡도로 구분합니다.
 
-## How complex is your project?
+## 당신의 프로젝트는 얼마나 복잡한가요?
 
-A project is likely to be **low complexity** if all the following conditions apply:
+다음 조건이 모두 해당되면 프로젝트는 **낮은 복잡도** 입니다:
 
-- Users do not need to change the way they use CockroachDB as a result.
-- Other CockroachDB contributors do not need to change the way they work as a result.
-- The architecture of the software or the project doesn’t change in a way that’s visible to more than a handful of developers.
-- The change doesn’t impact the cost model of CockroachDB (how much time and how much memory is used for common operations) in a way that's noticeable by users.
-- You can predict in advance that completing the change will not cost you more than a week of work (provided this isn’t your very first contribution).
+- 사용자가 카크로치디비를 사용하는 방식을 변경하지 않아도 됩니다.
+- 결과로 다른 카크로치디비 컨트리뷰터의 작업방식을 변경하지 않습니다.
+- 소프트웨어나 프로젝트의 아키텍처가 소수의 개발자만 이해할 수 있는 방식으로 변경되지 않습니다.
+- 변경사항이 카크로치디비의 비용 모델(일반적인 작업에 얼마나 많은 시간과 메모리가 사용되는지)에 사용자의 눈에 띌 만큼 영향을 주지 않습니다.
+- 작업에 1주일 이상 걸리지 않습니다(첫 번째 기여가 아닐 경우).
 
-A project is likely **high complexity** if _any_ of the following conditions apply:
+다음 조건 중 _하나라도_ 해당되면 프로젝트는 **높은 복잡도** 입니다:
 
-- More than a few users/apps will need to change the way they use CockroachDB as a result.
-- More than a few other CockroachDB contributors will need to change the way they work as a result.
-- The architecture of the software or the project changes in a way visible to more than a handful of developers.
-- The change impacts the cost model of CockroachDB (how much time and how much memory is used for common operations) in a way that's noticeable by users.
-- New software dependencies are introduced.
-- New subdirectories/packages will be created in the repository.
-- You can predict in advance that completing this change will take more than a month.
+- 카크로치디비 사용방식을 변경해야 하는 사용자/앱이 생깁니다.
+- 다른 카크로치디비 컨트리뷰터의 작업방식이 변경됩니다.
+- 소프트웨어나 프로젝트의 아키텍처가 소수의 개발자만 이해할 수 있는 방식으로 변경됩니다.
+- 변경사항이 카크로치디비의 비용 모델(일반적인 작업에 얼마나 많은 시간과 메모리가 사용되는지)에 사용자의 눈에 띌 만큼 영향을 줍니다.
+- 새로운 소프트웨어 의존성이 생깁니다.
+- 새 보조 디렉토리/패키지가 저장소에 추가됩니다.
+- 작업에 하 달 이상이 걸립니다.
 
-Projects that are neither definitely simple nor complex can be considered **medium complexity**.
+간단하지도 복잡하지도 않은 프로젝트는 **중간 복잡도** 로 분류됩니다.
 
-## How to contribute
+## 컨트리뷰트 하는 법
 
-### Prerequisites
+### 전제조건
 
-Before you start a project:
+프로젝트를 시작하기 전에:
 
-1. See [CONTRIBUTING.md](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md) to set up your local dev environment and learn about our code review workflow.
-2. Follow a few [code reviews](https://github.com/cockroachdb/cockroach/pulls).
-3. See [style.md](https://github.com/cockroachdb/cockroach/blob/master/docs/style.md) to learn about our code style and conventions.
+1. [CONTRIBUTING.md](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md) 에서 로컬 개발환경 설정과 코드리뷰 워크플로에 대해 알아보십시오.
+2. [코드리뷰](https://github.com/cockroachdb/cockroach/pulls) 몇 개를 확인하십시오.
+3. [style.md](https://github.com/cockroachdb/cockroach/blob/master/docs/style.md) 에서 코딩 스타일과 규칙에 대해 알아보십시오.
 
-### Low-complexity projects
+### 낮은 복잡도 프로젝트
 
-These cover things like bug fixes and small enhancements that do not involve any major architectural or design decisions. You should feel free to submit these for review as you come across them.
+주요 아키텍처 또는 디자인 결정을 포함하지 않는 버그 수정 및 작은 개선사항입니다. 이것들은 자유롭게 제출되어 리뷰받을 수 있습니다.
 
-1. Find or create an issue.
-2. Write the fix, include the appropriate tests, and follow our [code review workflow](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md#code-review-workflow).
-3. A CockroachDB engineer will validate and merge.
+1. 이슈를 검색하거나 만드십시오.
+2. 수정사항을 작성하고, 적절한 테스트를 포함하고, [코드리뷰 워크플로](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md#code-review-workflow)를 따르십시오.
+3. 카크로치디비 엔지니어는 이를 검증하고 머지합니다.
 
-A good place to find these types of projects are open issues with the label ["easy"](https://github.com/cockroachdb/cockroach/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy+label%3Ahelpwanted).
+이러한 유형의 프로젝트는 ["easy"](https://github.com/cockroachdb/cockroach/issues?q=is%3Aopen+is%3Aissue+label%3Aeasy+label%3Ahelpwanted) 레이블이 붙은 열린 이슈에서 찾을 수 있습니다.
 
-### Medium-complexity projects
+### 중간 복잡도 프로젝트
 
-For these projects, you should:
+이 프로젝트의 경우, 다음 내용을 해야합니다:
 
-1. Proactively reach out to the Cockroach team and discuss your proposal.
-2. One of our engineers will provide feedback on your design. Occasionally, you will be asked to contribute an RFC, too, in which case you should follow the regular [RFC process](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS) before you start implementing the solution.
-3. When everyone is happy, you can get started coding and follow the normal [code review workflow](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md#code-review-workflow).
+1. 적극적으로 카크로치 팀과 당신의 제안을 논의하십시오.
+2. 우리 엔지니어 중 한 명이 디자인에 대한 피드백을 제공합니다. 때때로 RFC에 기여할 수도 있습니다. 이 경우 솔루션 구현을 시작하기 전에 정규 [RFC 프로세스](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS)을 따라야 합니다.
+3. 모두가 동의하면, 코드를 작성하고 일반 [코드리뷰 워크플로](https://github.com/cockroachdb/cockroach/blob/master/CONTRIBUTING.md#code-review-workflow)를 따르십시오.
 
-{{site.data.alerts.callout_info}}If we are under time pressure to deliver a feature and it’s not tracking towards completion (or if your team goes radio silent), we may pull development back in house.{{site.data.alerts.end}}
+{{site.data.alerts.callout_info}}만약 우리가 기능제공에 대한 압력을 받고 있으며 개발이 완료되지 않는다면(또는 당신 팀의 응답이 없다면), 우리가 직접 개발할 수도 있습니다.{{site.data.alerts.end}}
 
-Here’s a great example of a contributor [building support for outer joins](https://github.com/cockroachdb/cockroach/issues/13342) in partnership with our engineering team.
+이것은 [outer join 기능 지원](https://github.com/cockroachdb/cockroach/issues/13342)을 우리의 엔지니어링 팀과 하는, 컨트리뷰터의 훌륭한 예시입니다.
 
-### High-complexity projects
+### 높은 복잡도 프로젝트
 
-These projects involve fundamental changes to the way CockroachDB works. What’s important to remember here is that supporting external development of these projects will take a non-trivial amount of time from the Cockroach team that would otherwise be spent building the product, so we really need to make sure it’s worth it. In practice, we’ve found even strong developers have little success with these types of projects and, in most cases, it is faster for our team to build these features ourselves.
+이 프로젝트는 카크로치디비가 작동하는 방식에 근본적인 변화를 줍니다. 이 프로젝트의 경우 외부 개발을 지원하는 것에 제품을 만드는데 사용될 카크로치 팀의 많은 시간이 소모되기 때문에, 정말로 가치있는 것인지 확인합니다. 실제로, 우리는 심지어 뛰어난 개발자들이 이 종류의 프로젝트에서 거의 성공을 거두지 못하며, 대부분의 경우 우리 팀이 이러한 기능을 직접 구현하는 것이 더 빠르다는 것을 발견했습니다.
 
-That being said, if you’re up for the challenge there are a few prerequisites. You should:
+만약 당신이 이런 것에 도전한다면, 다음을 수행해야 합니다:
 
-1. Convince the CockroachDB team of your ability to drive a larger project. For this, you can either work with the CockroachDB team on mid-sized projects first, or provide some other evidence that you are an expert at building high quality distributed systems.
-    {{site.data.alerts.callout_info}}The engineering team may not support further exploration if they think the project is too complex for an external contributor or if we already have a schedule for this work and you cannot guarantee delivery on that schedule.{{site.data.alerts.end}}
-2. Make a high-level proposal for your project, declaring your intention, the area of functionality, and how much time (and, if applicable, people) you have available to work on the project. You should do this via a GitHub issue.
-3. Engineers and product managers will review your plans to understand how it fits into our roadmap from a technical and business point of view. This will inform how much support we will be able to provide.
-    {{site.data.alerts.callout_info}}This review may take a few days to a few weeks, depending on our team’s availability and the complexity of the project.{{site.data.alerts.end}}
-4. Submit an [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS).
-5. Engineers will review your RFC and discuss the detailed design from a technical perspective. This will further inform how much support we will be able to provide.
-6. Once everyone is on the same page in terms of the design and impact, you can begin implementation with our support.
-    {{site.data.alerts.callout_info}}The CockroachDB team may have to pull a project back in house if development is happening too slowly or your team goes radio silent.{{site.data.alerts.end}}
+1. 더 큰 프로젝트를 수행할 수 있음을 카크로치디비 팀에 납득시키십시오. 이것을 위해, 먼저 카크로치디비 팀과 함께 중간 규모의 프로젝트를 진행하거나, 고품질의 분산 시스템 구축 전문가라는 다른 증거를 제공하십시오.
+    {{site.data.alerts.callout_info}}엔지니어링 팀에서 프로젝트가 외부 컨트리뷰터에게 너무 복잡하다고 생각하거나, 이미 작업에 대한 일정이 있고 그 기간에 대한 보장이 어렵다고 판단할 경우 추가지원을 하지 않을 수 있습니다.{{site.data.alerts.end}}
+2. 자신의 의도, 기능의 범위, 작업가능한 시간(, 가능하다면 인원)을 포함하여 프로젝트에 대한 고수준의 제안을 하십시오. 제안에 GitHub 이슈를 이용해 주십시오.
+3. 엔지니어와 프러덕트 매니저들은 당신의 계획이 우리의 로드맵에 부합하는지 기술과 비즈니스 관점에서 검토합니다. 이를 통해 우리가 얼마나 많은 지원을 제공할 수 있는지 알려줄 것입니다.
+    {{site.data.alerts.callout_info}}이 리뷰는 우리 팀의 가용성과 프로젝트의 복잡도에 따라 며칠에서 몇 주가 걸릴 수 있습니다.{{site.data.alerts.end}}
+4. [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS)를 제출하십시오.
+5. 엔지니어는 당신의 RFC를 검토하고 기술적인 관점에서 상세한 설계에 대해 논의할 것입니다. 이를 통해 우리가 얼마나 많은 지원을 제공할 수 있는지 알려줍니다.
+6. 디잔인과 영향 면에서 모든 사람이 동의하게 되면, 당신의 우리의 지원과 함께 구현을 시작할 수 있습니다.
+    {{site.data.alerts.callout_info}}개발이 너무 느리게 진행되거나 당신의 팀이 응답하지 않을 경우 카크로치디비 팀은 프로젝트를 내부로 다시 가져올 수 있습니다.{{site.data.alerts.end}}
 
-Pitfalls:
+주의사항:
 
-- Avoid submitting an [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS) for a complex project before approaching the CockroachDB first with a high-level description. The risk is that you spend a lot of effort on writing a RFC and the CockroachDB team then decides the project doesn't fit on the roadmap.
-- If you fork the CockroachDB repository and start working on a complex project in your fork without following the process above, **chances are extremely slim** that your functionality will eventually be merged in the main CockroachDB distribution. The reason for this is that we will not agree to merge any code changes that have not been validated step by step (i.e., commit by commit) in accordance with our quality standards, and we are not yet able to validate these quality standards on external repositories.
+- 고수준의 설명을 카크로치디비에 하기 전에, [RFC](https://github.com/cockroachdb/cockroach/tree/master/docs/RFCS)를 제출하지 마십시오. RFC를 작성하는 데 많은 노력을 기울인 후에 카크로치디비 팀이 프로젝트가 로드맵에 맞지 않다고 결정할 위험이 있습니다.
+- 위 프로세스를 따르지 않고 포크에서 복잡한 프로젝트를 시작하면 카크로치디비에 머지될 가능성이 **극히** 적어집니다. 우리는 품질 기준에 따라 단계적으로(즉, 커밋별로) 검증되지 않은 코드를 머지하는 것에 동의하지 않을 것이며, 외부 저장소의 품질 기준을 검증할 수 없기 때문입니다.
 
-In situations where we will not be able to support your team through an implementation, we will do our best to communicate why we are making that decision.
+구현 과정에서 우리가 당신의 팀을 지원할 수 없는 상황이면, 우리가 그 결정을 내리는 이유를 전달하기 위해 최선을 다할 것입니다.
