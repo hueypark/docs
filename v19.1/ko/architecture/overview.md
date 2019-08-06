@@ -18,8 +18,6 @@ redirect_from: index.html
 
 {{site.data.alerts.callout_info}}이 가이드는 카크로치디비의 구조에 대해 자세히 설명하지만, <em>당신이</em> 카크로치디비를 사용하여 애플리케이션을 구성하는 방법에 대해서는 설명하지 않습니다. 카크로치디비를 사용한 애플리케이션 아키텍처에 대한 도움말을 모려면 <a href="https://cockroachlabs.com/docs/stable">사용자 문서</a>를 확인하십시오.{{site.data.alerts.end}}
 
-This guide details how CockroachDB is built, but does not explain how <em>you</em> should architect an application using CockroachDB. For help with your own application's architecture using CockroachDB, check out our <a href="https://cockroachlabs.com/docs/stable">user documentation</a>.{{site.data.alerts.end}}
-
 ## 카크로치디비의 목적
 
 카크로치디비는 다음 목적을 달성하도록 디자인되었습니다:
