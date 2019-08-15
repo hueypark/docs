@@ -49,7 +49,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 데이터베이스 보여주기
 
-To see all databases, use the [`SHOW DATABASES`](show-databases.html) statement:
+모든 데이터베이스를 보기 위해서, [`SHOW DATABASES`](show-databases.html) 구문을 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
