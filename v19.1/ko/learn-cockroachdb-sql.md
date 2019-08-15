@@ -26,7 +26,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 당신에게 관리되는 CockroachDB 클러스터는  `defaultdb` 와 어떤 내부의 데이터베이스들과 합께 있습니다.
 
-새로운 데이터베이스를 만들기 위해서 당신의 초기 "admin" 사용자와 연결하고 데이터베이스 이름 뒤에 [`CREATE DATABASE`](create-database.html) 를 사용하십시오.
+새로운 데이터베이스를 만들기 위해서 당신의 초기 "admin" 사용자와 연결하고  [`CREATE DATABASE`](create-database.html) 뒤에 이름을 붙여서 사용하십시오.
 
 {% include copy-clipboard.html %}
 ~~~ sql
