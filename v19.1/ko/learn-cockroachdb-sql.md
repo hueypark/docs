@@ -20,7 +20,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 {% if site.managed %}
 ## 시작하기 전에
 
-Make sure you have already [connected the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client) to your cluster.
+여러분이 여러분의 클러스터로  [the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client)를 연결해야 합니다.
 
 ## 데이터 베이스 만들기
 
