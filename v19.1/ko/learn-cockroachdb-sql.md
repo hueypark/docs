@@ -207,16 +207,16 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 인덱스 만들기
 
-[Indexes](indexes.html) help locate data without having to look through every row of a table. They're automatically created for the [primary key](primary-key.html) of a table and any columns with a [`UNIQUE` constraint](unique.html).
+[Indexes](indexes.html)는 테이블의 모든 행들을 거칠 필요 없이 데이터를 위치시킬 수 있게 도와줍니다. 테이블의 [primary key](primary-key.html)와  [`UNIQUE` constraint](unique.html)가 있는 모든 열에 대해서 자동으로 생성이 됩니다.
 
-To create an index for non-unique columns, use [`CREATE INDEX`](create-index.html) followed by an optional index name and an `ON` clause identifying the table and column(s) to index.  For each column, you can choose whether to sort ascending (`ASC`) or descending (`DESC`).
+특별하지 않은 즉, 일반적인 column에 대해 인덱스를 만드는 방법은 [`CREATE INDEX`](create-index.html) 명령을 사용하는 것입니다. 그리고 명령어 뒤에 인덱스 이름과 테이블과 column을 확인할 수 있는 'ON' 구문이 옵니다. 각각의 column에 대해서 여러분은 ascending (`ASC`) or descending (`DESC`) 즉 오름차순, 내림차순 정렬을 원하시는 대로 할 수 있습니다.
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > CREATE INDEX balance_idx ON accounts (balance DESC);
 ~~~
 
-You can create indexes during table creation as well; just include the `INDEX` keyword followed by an optional index name and the column(s) to index:
+여러분은 테이블을 만드는 과정 동안에도 인덱스를 만들 수 있습니다. 간단하게 `INDEX` 키워드를 사용하고 뒤에 선택적 인덱스 이름 그리고 인덱싱 되는 column을 넣어주세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -229,7 +229,7 @@ You can create indexes during table creation as well; just include the `INDEX` k
 
 ## 테이블에 인덱스 보여주기
 
-To show the indexes on a table, use [`SHOW INDEX FROM`](show-index.html) followed by the name of the table:
+인덱스 들을 보여주는 방법이 있습니다. [`SHOW INDEX FROM`](show-index.html) 명령어를 사용하세요. 그리고 뒤에 테이블의 이름을 넣으세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
