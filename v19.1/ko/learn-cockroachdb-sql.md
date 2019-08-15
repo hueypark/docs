@@ -20,13 +20,13 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 {% if site.managed %}
 ## 시작하기 전에
 
-여러분이 여러분의 클러스터로  [the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client)를 연결해야 합니다.
+여러분이 여러분의 클러스터로  [the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client)를 연결했는지 여부를 꼭 확인하셔야 합니다.
 
 ## 데이터 베이스 만들기
 
-Your Managed CockroachDB cluster comes with a `defaultdb` for testing and some internal databases.
+당신에게 관리되는 CockroachDB 클러스터는  `defaultdb` 와 어떤 내부의 데이터베이스들과 합께 있습니다.
 
-To create a new database, connect with your initial "admin" user and use [`CREATE DATABASE`](create-database.html) followed by a database name:
+새로운 데이터베이스를 만들기 위해서 당신의 초기 "admin" 사용자와 연결하고 데이터베이스 이름 뒤에 [`CREATE DATABASE`](create-database.html) 를 사용하십시오.
 
 {% include copy-clipboard.html %}
 ~~~ sql
