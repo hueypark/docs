@@ -75,7 +75,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 > SET DATABASE = bank;
 ~~~
 
-When working in the default database, you do not need to reference it explicitly in statements. To see which database is currently the default, use the `SHOW DATABASE` statement (note the singular form):
+기본 데이터베이스에서 작업 할 때는 명령문에서 명시적으로 참조 할 필요가 없습니다. 어떤 데이터베이스가 현재 초기 디폴트인지 알기위해선  `SHOW DATABASE` 명령을 사용하시면 됩니다. (단수형인 것에 주목해야 해요.):
 
 {% include copy-clipboard.html %}
 ~~~ sql
