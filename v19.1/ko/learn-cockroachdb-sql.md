@@ -102,9 +102,9 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 );
 ~~~
 
-Table and column names must follow [these rules](keywords-and-identifiers.html#identifiers). Also, when you do not explicitly define a [primary key](primary-key.html), CockroachDB will automatically add a hidden `rowid` column as the primary key.
+테이블과 column의 이름 붙이는 것은 이 [규칙](keywords-and-identifiers.html#identifiers)을 따라야 합니다. 또한 만약 당신이 명시적으로 [primary key](primary-key.html)를 정의하지 않았다면, CockroachDB는 자동적으로 primary key로서 숨겨진 `rowid` column을 자동으로 생성할 것입니다.
 
-To avoid an error in case the table already exists, you can include `IF NOT EXISTS`:
+테이블이 이미 존재하는 경우 에러를 피하기 위하여 당신은 `IF NOT EXISTS`를 포함시킬 수 있습니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -114,7 +114,7 @@ To avoid an error in case the table already exists, you can include `IF NOT EXIS
 );
 ~~~
 
-To show all of the columns from a table, use [`SHOW COLUMNS FROM`](show-columns.html) followed by the table name:
+테이블로부터 모든 column들을 보여주기 위해서 ][`SHOW COLUMNS FROM`](show-columns.html) 이란 명령어를 사용하시고 뒤에 테이블의 이름을 적어주세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -129,7 +129,7 @@ To show all of the columns from a table, use [`SHOW COLUMNS FROM`](show-columns.
 (2 rows)
 ~~~
 
-When you no longer need a table, use [`DROP TABLE`](drop-table.html) followed by the table name to remove the table and all its data:
+당신이 더이상 테이블을 필요하지 않게된다면 [`DROP TABLE`](drop-table.html)을 사용하십시오. 그리고 뒤에 테이블의 이름을 붙이면 그 테이블과 그 안에 있는 모든 데이터들이 사라지게 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
