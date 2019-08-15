@@ -247,7 +247,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 테이블 
 
-To query a table, use [`SELECT`](select-clause.html) followed by a comma-separated list of the columns to be returned and the table from which to retrieve the data:
+테이블을 쿼리하려면 [`SELECT`](select-clause.html)를 사용하시고 그 뒤에 테이블을 쿼리하려면 SELECT 다음에 쉼표로 구분 된 리턴 할 열 목록과 데이터를 검색 할 테이블을 넣으시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -266,7 +266,7 @@ To query a table, use [`SELECT`](select-clause.html) followed by a comma-separat
 (6 rows)
 ~~~
 
-To retrieve all columns, use the `*` wildcard:
+모든 열을 검색하려면, `*` 이 와일드카드를 사용하십시오:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -285,7 +285,7 @@ To retrieve all columns, use the `*` wildcard:
 (6 rows)
 ~~~
 
-To filter the results, add a `WHERE` clause identifying the columns and values to filter on:
+결과를 필터링 하고 싶으시다면 column과 필터링 할 열 및 값 식별을 하는 `WHERE` 절을 추가하십시오:
 
 {% include copy-clipboard.html %}
 ~~~ sql
