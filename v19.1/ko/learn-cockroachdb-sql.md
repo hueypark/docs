@@ -154,7 +154,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 테이블에 행 넣기
 
-테이블에 행을 넣기 위해서 [`INSERT INTO`](insert.html)명령어를 사용하세요. 그리고 뒤에 테이블 이름을 붙이고 테이블에 열이 나타나는 순서대로 나열된 열 값:
+테이블에 행을 넣기 위해서 [`INSERT INTO`](insert.html)명령어를 사용하세요. 그리고 뒤에 테이블 이름을 붙이고 테이블에 열이 나타나는 순서대로 나열된 열 값을 넣으세요.:
 
 {% include copy-clipboard.html %}
 ~~~ sql
