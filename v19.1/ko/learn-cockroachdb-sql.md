@@ -301,7 +301,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 (3 rows)
 ~~~
 
-To sort the results, add an `ORDER BY` clause identifying the columns to sort by. For each column, you can choose whether to sort ascending (`ASC`) or descending (`DESC`).
+결과들을 정렬하기 위해서는 정렬을 할 열을 식별해주는 `ORDER BY` 절을 추가하세요. 각각의 column에 대해 여러분은 오름차순(ascending (`ASC`))으로 정렬할지 내림차순((descending (`DESC`)))으로 정렬할지에 대해 선택이 가능합니다. 
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -322,7 +322,7 @@ To sort the results, add an `ORDER BY` clause identifying the columns to sort by
 
 ## 테이블 안에 행 업데이트하기
 
-To update rows in a table, use [`UPDATE`](update.html) followed by the table name, a `SET` clause identifying the columns to update and their new values, and a `WHERE` clause identifying the rows to update:
+테이블에 있는 행을 업데이트하기 위해선 [`UPDATE`](update.html)명령어를 사용하고 뒤에 테이블 이름을 붙이세요. 그리고 그 뒤에 업데이트 할 columns와 새로운 값을 식별해주는 명령어인 `SET`을 써주시고 업데이트할 rows를 확인해주는 `WHERE` 명령어를 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -346,11 +346,11 @@ To update rows in a table, use [`UPDATE`](update.html) followed by the table nam
 (6 rows)
 ~~~
 
-If a table has a primary key, you can use that in the `WHERE` clause to reliably update specific rows; otherwise, each row matching the `WHERE` clause is updated. When there's no `WHERE` clause, all rows in the table are updated.
+테이블에 기본 키가있는 경우,`WHERE` 절에서 그것을 사용하여 특정 행을 확실하게 업데이트 할 수 있습니다. 그렇지 않은 경우,`WHERE` 절과 일치하는 행이 업데이트됩니다. `WHERE` 절이 없으면 테이블의 모든 행이 업데이트 됩니다.
 
 ## 테이블에 행 지우기
 
-To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the table name and a `WHERE` clause identifying the rows to delete:
+테이블에서 행을 지우기 위해선 [`DELETE FROM`](delete.html) 명령어를 사용하고 그 뒤에 테이블 이름을 쓰고 그 뒤에 또 지울 행을 확인해주는 절인 `WHERE`를 써주시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -372,13 +372,14 @@ To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the ta
 (4 rows)
 ~~~
 
-Just as with the `UPDATE` statement, if a table has a primary key, you can use that in the `WHERE` clause to reliably delete specific rows; otherwise, each row matching the `WHERE` clause is deleted. When there's no `WHERE` clause, all rows in the table are deleted.
+`UPDATE` 문과 마찬가지로 테이블에 기본 키가있는 경우,`WHERE` 절에서 그것을 사용하여 특정 행을 확실하게 삭제할 수 있습니다. 그렇지 않은 경우,`WHERE` 절과 일치하는 행이 삭제됩니다. `WHERE`절이 없으면 테이블의 모든 행이 삭제됩니다.
+
 
 {% unless site.managed %}
 ## 그래서 다음은요?
 
-- Explore all [SQL Statements](sql-statements.html)
-- [Use the built-in SQL client](use-the-built-in-sql-client.html) to execute statements from a shell or directly from the command line
-- [Install the client driver](install-client-drivers.html) for your preferred language and [build an app](build-an-app-with-cockroachdb.html)
-- [Explore core CockroachDB features](demo-data-replication.html) like automatic replication, rebalancing, and fault tolerance
+- 모든 [SQL Statements](sql-statements.html)를 알아보아요.
+- 쉘에서 또는 커맨드 라인에서 직접 [built-in SQL client](use-the-built-in-sql-client.html)를 사용해봅시다. 
+- [Install the client driver](install-client-drivers.html)에서는 원하는 언어로 그리고 [build an app](build-an-app-with-cockroachdb.html)을 해보아요.
+- [core CockroachDB features](demo-data-replication.html)에 대해 알아보아요. 예를 들어 automatic replication, rebalancing, and fault tolerance
 {% endunless %}
