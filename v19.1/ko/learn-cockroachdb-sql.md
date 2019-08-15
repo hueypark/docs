@@ -5,7 +5,7 @@ toc: true
 build_for: [standard, managed]
 ---
 
-이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 리스트와 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html).을 참고하세요.
+이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 리스트와 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html)을 참고하세요.
 
 {% unless site.managed %}
 {{site.data.alerts.callout_success}}
