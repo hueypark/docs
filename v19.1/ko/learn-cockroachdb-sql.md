@@ -33,7 +33,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 > CREATE DATABASE bank;
 ~~~
 
-Database names must follow [these identifier rules](keywords-and-identifiers.html#identifiers). To avoid an error in case the database already exists, you can include `IF NOT EXISTS`:
+데이터베이스의 명명법은 다음 링크를 따라야 합니다. [these identifier rules](keywords-and-identifiers.html#identifiers). 데이터베이스가 존재하는 경우 에러를 피하기 위해,  `IF NOT EXISTS` 를 포함시킬 수 있습니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
