@@ -68,7 +68,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 초기 데이터베이스 설정
 
-It's best to set the default database directly in your [connection string](managed-sign-up-for-a-cluster.
+It's best to set the default database directly in your [connection string](managed-sign-up-for-a-cluster).
 
 {% include copy-clipboard.html %}
 ~~~ sql
