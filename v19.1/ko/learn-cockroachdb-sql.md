@@ -114,7 +114,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 );
 ~~~
 
-테이블로부터 모든 column들을 보여주기 위해서 ][`SHOW COLUMNS FROM`](show-columns.html) 이란 명령어를 사용하시고 뒤에 테이블의 이름을 적어주세요:
+테이블로부터 모든 column들을 보여주기 위해서 [`SHOW COLUMNS FROM`](show-columns.html) 이란 명령어를 사용하시고 뒤에 테이블의 이름을 적어주세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -129,7 +129,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 (2 rows)
 ~~~
 
-당신이 더이상 테이블을 필요하지 않게된다면 [`DROP TABLE`](drop-table.html)을 사용하십시오. 그리고 뒤에 테이블의 이름을 붙이면 그 테이블과 그 안에 있는 모든 데이터들이 사라지게 됩니다:
+더이상 테이블을 필요가 없다면 [`DROP TABLE`](drop-table.html)을 사용하십시오. 그리고 뒤에 테이블의 이름을 붙이면 그 테이블과 그 안에 있는 모든 데이터들이 사라지게 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -138,7 +138,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 테이블 보여주기
 
-To see all tables in the active database, use the [`SHOW TABLES`](show-tables.html) statement:
+유효한 모든 데이터베이스를 보기 위해서 [`SHOW TABLES`](show-tables.html) 명령어를 사용하세요.:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -152,16 +152,16 @@ To see all tables in the active database, use the [`SHOW TABLES`](show-tables.ht
 (1 row)
 ~~~
 
-## 테이블에 행 
+## 테이블에 행 넣기
 
-To insert a row into a table, use [`INSERT INTO`](insert.html) followed by the table name and then the column values listed in the order in which the columns appear in the table:
+테이블에 행을 넣기 위해서 [`INSERT INTO`](insert.html)명령어를 사용하세요. 그리고 뒤에 테이블 이름을 붙이고 테이블에 열이 나타나는 순서대로 나열된 열 값:
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > INSERT INTO accounts VALUES (1, 10000.50);
 ~~~
 
-If you want to pass column values in a different order, list the column names explicitly and provide the column values in the corresponding order:
+만약 그대가 column 값을 다른 순서로 넘기고 싶다면 column 이름을 명시적으로 나열하고 해당 순서로 column 값을 넣어주시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -169,7 +169,7 @@ If you want to pass column values in a different order, list the column names ex
     (25000.00, 2);
 ~~~
 
-To insert multiple rows into a table, use a comma-separated list of parentheses, each containing column values for one row:
+테이블에 여러 행을 삽입하려면 쉼표로 구분 된 괄호 목록을 사용하시면 됩니다. 참고로 각 괄호는 한 행의 column 값을 포함합니다.
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -178,7 +178,7 @@ To insert multiple rows into a table, use a comma-separated list of parentheses,
     (4, 9400.10);
 ~~~
 
-[Defaults values](default-value.html) are used when you leave specific columns out of your statement, or when you explicitly request default values. For example, both of the following statements would create a row with `balance` filled with its default value, in this case `NULL`:
+[Defaults values](default-value.html)는 그대가 명령문에서 어떤 특정 column을 제외할경우 사용이 됩니다. 아니면 명시적으로 초기값을 요청할 때 쓰이죠. 예를 들어보죠. 이어서 오는 두개의 명령문들 모두 `balance`가 기본값으로 채워진 행을 만들어줍니다.(이 경우는 `NULL`):
 
 {% include copy-clipboard.html %}
 ~~~ sql
