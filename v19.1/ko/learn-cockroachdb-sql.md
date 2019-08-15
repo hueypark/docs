@@ -1,11 +1,11 @@
 ---
-title: Learn CockroachDB SQL
-summary: Learn some of the most essential CockroachDB SQL statements.
+주제: CockroachDB SQL을 배워봅시다
+요약: 가장 필요한 CockroachDB SQL 구문들을 배워봅시다
 toc: true
 build_for: [standard, managed]
 ---
 
-This page walks you through some of the most essential CockroachDB SQL statements. For a complete list and related details, see [SQL Statements](sql-statements.html).
+이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 리스트와 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html). 이곳을 참고하세요.
 
 {% unless site.managed %}
 {{site.data.alerts.callout_success}}
