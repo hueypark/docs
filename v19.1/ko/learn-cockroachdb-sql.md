@@ -40,7 +40,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 > CREATE DATABASE IF NOT EXISTS bank;
 ~~~
 
-When you no longer need a database, use [`DROP DATABASE`](drop-database.html) followed by the database name to remove the database and all its objects:
+더이상 데이터베이스가 필요하지 않을 때,   [`DROP DATABASE`](drop-database.html) 를 사용하세요. 그리고 데이터베이스와 그 안에 있는 모든 것을 지우기 위해 뒤에 데이터베이스의 이름을 붙이세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
