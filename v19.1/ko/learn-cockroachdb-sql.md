@@ -92,7 +92,7 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 
 ## 테이블 
 
-To create a table, use [`CREATE TABLE`](create-table.html) followed by a table name, the column names, and the [data type](data-types.html) and [constraint](constraints.html), if any, for each column:
+테이블을 만들기 위해서는 [`CREATE TABLE`](create-table.html)을 쓰고 뒤에 테이블 이름, column 이름 그리고 [데이터 타입](data-types.html) and [제약](constraints.html) 이 존재하는 경우에 대하여 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
