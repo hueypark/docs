@@ -18,11 +18,11 @@ CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 �
 {{site.data.alerts.end}}
 
 {% if site.managed %}
-## Before you begin
+## 시작하기 전에
 
 Make sure you have already [connected the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client) to your cluster.
 
-## Create a database
+## 데이터 베이스 만들기
 
 Your Managed CockroachDB cluster comes with a `defaultdb` for testing and some internal databases.
 
@@ -47,7 +47,7 @@ When you no longer need a database, use [`DROP DATABASE`](drop-database.html) fo
 > DROP DATABASE bank;
 ~~~
 
-## Show databases
+## 데이터베이스 보여주기
 
 To see all databases, use the [`SHOW DATABASES`](show-databases.html) statement:
 
@@ -66,7 +66,7 @@ To see all databases, use the [`SHOW DATABASES`](show-databases.html) statement:
 (4 rows)
 ~~~
 
-## Set the default database
+## 초기 데이터베이스 설정
 
 It's best to set the default database directly in your [connection string](managed-sign-up-for-a-cluster.
 
@@ -90,7 +90,7 @@ When working in the default database, you do not need to reference it explicitly
 ~~~
 {% endif %}
 
-## Create a table
+## 테이블 
 
 To create a table, use [`CREATE TABLE`](create-table.html) followed by a table name, the column names, and the [data type](data-types.html) and [constraint](constraints.html), if any, for each column:
 
@@ -136,7 +136,7 @@ When you no longer need a table, use [`DROP TABLE`](drop-table.html) followed by
 > DROP TABLE accounts;
 ~~~
 
-## Show tables
+## 테이블 보여주기
 
 To see all tables in the active database, use the [`SHOW TABLES`](show-tables.html) statement:
 
@@ -152,7 +152,7 @@ To see all tables in the active database, use the [`SHOW TABLES`](show-tables.ht
 (1 row)
 ~~~
 
-## Insert rows into a table
+## 테이블에 행 
 
 To insert a row into a table, use [`INSERT INTO`](insert.html) followed by the table name and then the column values listed in the order in which the columns appear in the table:
 
@@ -205,7 +205,7 @@ To insert multiple rows into a table, use a comma-separated list of parentheses,
 (2 rows)
 ~~~
 
-## Create an index
+## 인덱스 만들기
 
 [Indexes](indexes.html) help locate data without having to look through every row of a table. They're automatically created for the [primary key](primary-key.html) of a table and any columns with a [`UNIQUE` constraint](unique.html).
 
@@ -227,7 +227,7 @@ You can create indexes during table creation as well; just include the `INDEX` k
 );
 ~~~
 
-## Show indexes on a table
+## 테이블에 인덱스 보여주기
 
 To show the indexes on a table, use [`SHOW INDEX FROM`](show-index.html) followed by the name of the table:
 
@@ -245,7 +245,7 @@ To show the indexes on a table, use [`SHOW INDEX FROM`](show-index.html) followe
 (3 rows)
 ~~~
 
-## Query a table
+## 테이블 
 
 To query a table, use [`SELECT`](select-clause.html) followed by a comma-separated list of the columns to be returned and the table from which to retrieve the data:
 
@@ -320,7 +320,7 @@ To sort the results, add an `ORDER BY` clause identifying the columns to sort by
 (6 rows)
 ~~~
 
-## Update rows in a table
+## 테이블 안에 행 업데이트하기
 
 To update rows in a table, use [`UPDATE`](update.html) followed by the table name, a `SET` clause identifying the columns to update and their new values, and a `WHERE` clause identifying the rows to update:
 
@@ -348,7 +348,7 @@ To update rows in a table, use [`UPDATE`](update.html) followed by the table nam
 
 If a table has a primary key, you can use that in the `WHERE` clause to reliably update specific rows; otherwise, each row matching the `WHERE` clause is updated. When there's no `WHERE` clause, all rows in the table are updated.
 
-## Delete rows in a table
+## 테이블에 행 지우기
 
 To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the table name and a `WHERE` clause identifying the rows to delete:
 
@@ -375,7 +375,7 @@ To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the ta
 Just as with the `UPDATE` statement, if a table has a primary key, you can use that in the `WHERE` clause to reliably delete specific rows; otherwise, each row matching the `WHERE` clause is deleted. When there's no `WHERE` clause, all rows in the table are deleted.
 
 {% unless site.managed %}
-## What's next?
+## 그래서 다음은요?
 
 - Explore all [SQL Statements](sql-statements.html)
 - [Use the built-in SQL client](use-the-built-in-sql-client.html) to execute statements from a shell or directly from the command line
