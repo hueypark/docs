@@ -5,16 +5,16 @@ toc: true
 build_for: [standard, managed]
 ---
 
-이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 리스트와 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html)을 참고하세요.
+이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 목록 그리고 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html)을 참고하세요.
 
 {% unless site.managed %}
 {{site.data.alerts.callout_success}}
-Use an interactive SQL shell to try out these statements. If you have a cluster already running, use the [`cockroach sql`](use-the-built-in-sql-client.html) command. Otherwise, use the [`cockroach demo`](cockroach-demo.html) command to open a shell to a temporary, in-memory cluster.
+이 구문들을 시도하려면 interactive SQL shell을 사용해보세요. 만약 당신의 클러스터가 이미 실행되고 있다면, [`cockroach sql`](use-the-built-in-sql-client.html) 이 명령을 사용하세요. 다른 방법을 사용해보자면 메모리 클러스터 안에 있는 일시적인 쉘을 열기위해서 [`cockroach demo`](cockroach-demo.html) 명령어를 사용해보세요. 
 {{site.data.alerts.end}}
 {% endunless %}
 
 {{site.data.alerts.callout_info}}
-CockroachDB aims to provide standard SQL with extensions, but some standard SQL functionality is not yet available. See our [SQL Feature Support](sql-feature-support.html) page for more details.
+CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 합니다. 하지만 어떤 standard SQL 기능은 아직 가능하지 않습니다. 자세한 사항을 확인하고 싶으시다면 다음 링크를 참고해주세요. [SQL Feature Support](sql-feature-support.html) 
 {{site.data.alerts.end}}
 
 {% if site.managed %}
