@@ -1,6 +1,6 @@
 ---
-주제: CockroachDB SQL을 배우자
-요약: 가장 필요한 CockroachDB SQL 구문들을 배우자
+title: CockroachDB SQL을 배우자
+summary: 가장 필요한 CockroachDB SQL 구문들을 배우자
 toc: true
 build_for: [standard, managed]
 ---
