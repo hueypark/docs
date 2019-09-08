@@ -1,55 +1,55 @@
 ---
-title: Learn CockroachDB SQL
-summary: Learn some of the most essential CockroachDB SQL statements.
+주제: CockroachDB SQL을 배우자
+요약: 가장 필요한 CockroachDB SQL 구문들을 배우자
 toc: true
 build_for: [standard, managed]
 ---
 
-This page walks you through some of the most essential CockroachDB SQL statements. For a complete list and related details, see [SQL Statements](sql-statements.html).
+이 페이지는 여러분이 가장 중요한 CockroachDB SQL 구문을 쉽게 알 수 있게 도와줄 겁니다. 완전한 목록 그리고 연관된 더 자세한 사항을 보고 싶으시다면 [SQL Statements](sql-statements.html)을 참고하세요.
 
 {% unless site.managed %}
 {{site.data.alerts.callout_success}}
-Use an interactive SQL shell to try out these statements. If you have a cluster already running, use the [`cockroach sql`](use-the-built-in-sql-client.html) command. Otherwise, use the [`cockroach demo`](cockroach-demo.html) command to open a shell to a temporary, in-memory cluster.
+이 구문들을 시도하려면 interactive SQL shell을 사용해보세요. 만약 당신의 클러스터가 이미 실행되고 있다면, [`cockroach sql`](use-the-built-in-sql-client.html) 이 명령을 사용하세요. 다른 방법을 사용해보자면 메모리 클러스터 안에 있는 일시적인 쉘을 열기위해서 [`cockroach demo`](cockroach-demo.html) 명령어를 사용해보세요. 
 {{site.data.alerts.end}}
 {% endunless %}
 
 {{site.data.alerts.callout_info}}
-CockroachDB aims to provide standard SQL with extensions, but some standard SQL functionality is not yet available. See our [SQL Feature Support](sql-feature-support.html) page for more details.
+CockroachDB는 확장성 있는 standard SQL을 제공하는 것을 목표로 합니다. 하지만 어떤 standard SQL 기능은 아직 가능하지 않습니다. 자세한 사항을 확인하고 싶으시다면 다음 링크를 참고해주세요. [SQL Feature Support](sql-feature-support.html) 
 {{site.data.alerts.end}}
 
 {% if site.managed %}
-## Before you begin
+## 시작하기 전에
 
-Make sure you have already [connected the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client) to your cluster.
+여러분이 여러분의 클러스터로  [the CockroachDB SQL client](managed-connect-to-your-cluster.html#use-the-cockroachdb-sql-client)를 연결했는지 여부를 꼭 확인하셔야 합니다.
 
-## Create a database
+## 데이터 베이스 만들기
 
-Your Managed CockroachDB cluster comes with a `defaultdb` for testing and some internal databases.
+당신에게 관리되는 CockroachDB 클러스터는  `defaultdb` 와 어떤 내부의 데이터베이스들과 합께 있습니다.
 
-To create a new database, connect with your initial "admin" user and use [`CREATE DATABASE`](create-database.html) followed by a database name:
+새로운 데이터베이스를 만들기 위해서 당신의 초기 "admin" 사용자와 연결하고  [`CREATE DATABASE`](create-database.html) 뒤에 이름을 붙여서 사용하십시오.
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > CREATE DATABASE bank;
 ~~~
 
-Database names must follow [these identifier rules](keywords-and-identifiers.html#identifiers). To avoid an error in case the database already exists, you can include `IF NOT EXISTS`:
+데이터베이스의 명명법은 다음 링크를 따라야 합니다. [these identifier rules](keywords-and-identifiers.html#identifiers). 데이터베이스가 존재하는 경우 에러를 피하기 위해,  `IF NOT EXISTS` 를 포함시킬 수 있습니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > CREATE DATABASE IF NOT EXISTS bank;
 ~~~
 
-When you no longer need a database, use [`DROP DATABASE`](drop-database.html) followed by the database name to remove the database and all its objects:
+더이상 데이터베이스가 필요하지 않을 때,   [`DROP DATABASE`](drop-database.html) 를 사용하세요. 그리고 데이터베이스와 그 안에 있는 모든 것을 지우기 위해 뒤에 데이터베이스의 이름을 붙이세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > DROP DATABASE bank;
 ~~~
 
-## Show databases
+## 데이터베이스 보여주기
 
-To see all databases, use the [`SHOW DATABASES`](show-databases.html) statement:
+모든 데이터베이스를 보기 위해서, [`SHOW DATABASES`](show-databases.html) 구문을 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -66,16 +66,16 @@ To see all databases, use the [`SHOW DATABASES`](show-databases.html) statement:
 (4 rows)
 ~~~
 
-## Set the default database
+## 초기 데이터베이스 설정
 
-It's best to set the default database directly in your [connection string](managed-sign-up-for-a-cluster.
+초기 데이터 베이스 설정을 위해 가장 좋은 방법은 [connection string](managed-sign-up-for-a-cluster)을 넣어주시면 됩니다.
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > SET DATABASE = bank;
 ~~~
 
-When working in the default database, you do not need to reference it explicitly in statements. To see which database is currently the default, use the `SHOW DATABASE` statement (note the singular form):
+기본 데이터베이스에서 작업 할 때는 명령문에서 명시적으로 참조 할 필요가 없습니다. 어떤 데이터베이스가 현재 초기 디폴트인지 알기위해선  `SHOW DATABASE` 명령을 사용하시면 됩니다. (단수형인 것에 주목해야 해요.):
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -90,9 +90,9 @@ When working in the default database, you do not need to reference it explicitly
 ~~~
 {% endif %}
 
-## Create a table
+## 테이블 
 
-To create a table, use [`CREATE TABLE`](create-table.html) followed by a table name, the column names, and the [data type](data-types.html) and [constraint](constraints.html), if any, for each column:
+테이블을 만들기 위해서는 [`CREATE TABLE`](create-table.html)을 쓰고 뒤에 테이블 이름, column 이름 그리고 [데이터 타입](data-types.html) and [제약](constraints.html) 이 존재하는 경우에 대하여 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -102,9 +102,9 @@ To create a table, use [`CREATE TABLE`](create-table.html) followed by a table n
 );
 ~~~
 
-Table and column names must follow [these rules](keywords-and-identifiers.html#identifiers). Also, when you do not explicitly define a [primary key](primary-key.html), CockroachDB will automatically add a hidden `rowid` column as the primary key.
+테이블과 column의 이름 붙이는 것은 이 [규칙](keywords-and-identifiers.html#identifiers)을 따라야 합니다. 또한 만약 당신이 명시적으로 [primary key](primary-key.html)를 정의하지 않았다면, CockroachDB는 자동적으로 primary key로서 숨겨진 `rowid` column을 자동으로 생성할 것입니다.
 
-To avoid an error in case the table already exists, you can include `IF NOT EXISTS`:
+테이블이 이미 존재하는 경우 에러를 피하기 위하여 당신은 `IF NOT EXISTS`를 포함시킬 수 있습니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -114,7 +114,7 @@ To avoid an error in case the table already exists, you can include `IF NOT EXIS
 );
 ~~~
 
-To show all of the columns from a table, use [`SHOW COLUMNS FROM`](show-columns.html) followed by the table name:
+테이블로부터 모든 column들을 보여주기 위해서 [`SHOW COLUMNS FROM`](show-columns.html) 이란 명령어를 사용하시고 뒤에 테이블의 이름을 적어주세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -129,16 +129,16 @@ To show all of the columns from a table, use [`SHOW COLUMNS FROM`](show-columns.
 (2 rows)
 ~~~
 
-When you no longer need a table, use [`DROP TABLE`](drop-table.html) followed by the table name to remove the table and all its data:
+더이상 테이블을 필요가 없다면 [`DROP TABLE`](drop-table.html)을 사용하십시오. 그리고 뒤에 테이블의 이름을 붙이면 그 테이블과 그 안에 있는 모든 데이터들이 사라지게 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > DROP TABLE accounts;
 ~~~
 
-## Show tables
+## 테이블 보여주기
 
-To see all tables in the active database, use the [`SHOW TABLES`](show-tables.html) statement:
+유효한 모든 데이터베이스를 보기 위해서 [`SHOW TABLES`](show-tables.html) 명령어를 사용하세요.:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -152,16 +152,16 @@ To see all tables in the active database, use the [`SHOW TABLES`](show-tables.ht
 (1 row)
 ~~~
 
-## Insert rows into a table
+## 테이블에 행 넣기
 
-To insert a row into a table, use [`INSERT INTO`](insert.html) followed by the table name and then the column values listed in the order in which the columns appear in the table:
+테이블에 행을 넣기 위해서 [`INSERT INTO`](insert.html)명령어를 사용하세요. 그리고 뒤에 테이블 이름을 붙이고 테이블에 열이 나타나는 순서대로 나열된 열 값을 넣으세요.:
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > INSERT INTO accounts VALUES (1, 10000.50);
 ~~~
 
-If you want to pass column values in a different order, list the column names explicitly and provide the column values in the corresponding order:
+만약 그대가 column 값을 다른 순서로 넘기고 싶다면 column 이름을 명시적으로 나열하고 해당 순서로 column 값을 넣어주시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -169,7 +169,7 @@ If you want to pass column values in a different order, list the column names ex
     (25000.00, 2);
 ~~~
 
-To insert multiple rows into a table, use a comma-separated list of parentheses, each containing column values for one row:
+테이블에 여러 행을 삽입하려면 쉼표로 구분 된 괄호 목록을 사용하시면 됩니다. 참고로 각 괄호는 한 행의 column 값을 포함합니다.
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -178,7 +178,7 @@ To insert multiple rows into a table, use a comma-separated list of parentheses,
     (4, 9400.10);
 ~~~
 
-[Defaults values](default-value.html) are used when you leave specific columns out of your statement, or when you explicitly request default values. For example, both of the following statements would create a row with `balance` filled with its default value, in this case `NULL`:
+[Defaults values](default-value.html)는 그대가 명령문에서 어떤 특정 column을 제외할경우 사용이 됩니다. 아니면 명시적으로 초기값을 요청할 때 쓰이죠. 예를 들어보죠. 이어서 오는 두개의 명령문들 모두 `balance`가 기본값으로 채워진 행을 만들어줍니다.(이 경우는 `NULL`):
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -205,18 +205,18 @@ To insert multiple rows into a table, use a comma-separated list of parentheses,
 (2 rows)
 ~~~
 
-## Create an index
+## 인덱스 만들기
 
-[Indexes](indexes.html) help locate data without having to look through every row of a table. They're automatically created for the [primary key](primary-key.html) of a table and any columns with a [`UNIQUE` constraint](unique.html).
+[Indexes](indexes.html)는 테이블의 모든 행들을 거칠 필요 없이 데이터를 위치시킬 수 있게 도와줍니다. 테이블의 [primary key](primary-key.html)와  [`UNIQUE` constraint](unique.html)가 있는 모든 열에 대해서 자동으로 생성이 됩니다.
 
-To create an index for non-unique columns, use [`CREATE INDEX`](create-index.html) followed by an optional index name and an `ON` clause identifying the table and column(s) to index.  For each column, you can choose whether to sort ascending (`ASC`) or descending (`DESC`).
+특별하지 않은 즉, 일반적인 column에 대해 인덱스를 만드는 방법은 [`CREATE INDEX`](create-index.html) 명령을 사용하는 것입니다. 그리고 명령어 뒤에 인덱스 이름과 테이블과 column을 확인할 수 있는 'ON' 구문이 옵니다. 각각의 column에 대해서 여러분은 ascending (`ASC`) or descending (`DESC`) 즉 오름차순, 내림차순 정렬을 원하시는 대로 할 수 있습니다.
 
 {% include copy-clipboard.html %}
 ~~~ sql
 > CREATE INDEX balance_idx ON accounts (balance DESC);
 ~~~
 
-You can create indexes during table creation as well; just include the `INDEX` keyword followed by an optional index name and the column(s) to index:
+여러분은 테이블을 만드는 과정 동안에도 인덱스를 만들 수 있습니다. 간단하게 `INDEX` 키워드를 사용하고 뒤에 선택적 인덱스 이름 그리고 인덱싱 되는 column을 넣어주세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -227,9 +227,9 @@ You can create indexes during table creation as well; just include the `INDEX` k
 );
 ~~~
 
-## Show indexes on a table
+## 테이블에 인덱스 보여주기
 
-To show the indexes on a table, use [`SHOW INDEX FROM`](show-index.html) followed by the name of the table:
+인덱스 들을 보여주는 방법이 있습니다. [`SHOW INDEX FROM`](show-index.html) 명령어를 사용하세요. 그리고 뒤에 테이블의 이름을 넣으세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -245,9 +245,9 @@ To show the indexes on a table, use [`SHOW INDEX FROM`](show-index.html) followe
 (3 rows)
 ~~~
 
-## Query a table
+## 테이블 
 
-To query a table, use [`SELECT`](select-clause.html) followed by a comma-separated list of the columns to be returned and the table from which to retrieve the data:
+테이블을 쿼리하려면 [`SELECT`](select-clause.html)를 사용하시고 그 뒤에 테이블을 쿼리하려면 SELECT 다음에 쉼표로 구분 된 리턴 할 열 목록과 데이터를 검색 할 테이블을 넣으시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -266,7 +266,7 @@ To query a table, use [`SELECT`](select-clause.html) followed by a comma-separat
 (6 rows)
 ~~~
 
-To retrieve all columns, use the `*` wildcard:
+모든 열을 검색하려면, `*` 이 와일드카드를 사용하십시오:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -285,7 +285,7 @@ To retrieve all columns, use the `*` wildcard:
 (6 rows)
 ~~~
 
-To filter the results, add a `WHERE` clause identifying the columns and values to filter on:
+결과를 필터링 하고 싶으시다면 column과 필터링 할 열 및 값 식별을 하는 `WHERE` 절을 추가하십시오:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -301,7 +301,7 @@ To filter the results, add a `WHERE` clause identifying the columns and values t
 (3 rows)
 ~~~
 
-To sort the results, add an `ORDER BY` clause identifying the columns to sort by. For each column, you can choose whether to sort ascending (`ASC`) or descending (`DESC`).
+결과들을 정렬하기 위해서는 정렬을 할 열을 식별해주는 `ORDER BY` 절을 추가하세요. 각각의 column에 대해 여러분은 오름차순(ascending (`ASC`))으로 정렬할지 내림차순((descending (`DESC`)))으로 정렬할지에 대해 선택이 가능합니다. 
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -320,9 +320,9 @@ To sort the results, add an `ORDER BY` clause identifying the columns to sort by
 (6 rows)
 ~~~
 
-## Update rows in a table
+## 테이블 안에 행 업데이트하기
 
-To update rows in a table, use [`UPDATE`](update.html) followed by the table name, a `SET` clause identifying the columns to update and their new values, and a `WHERE` clause identifying the rows to update:
+테이블에 있는 행을 업데이트하기 위해선 [`UPDATE`](update.html)명령어를 사용하고 뒤에 테이블 이름을 붙이세요. 그리고 그 뒤에 업데이트 할 columns와 새로운 값을 식별해주는 명령어인 `SET`을 써주시고 업데이트할 rows를 확인해주는 `WHERE` 명령어를 사용하세요:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -346,11 +346,11 @@ To update rows in a table, use [`UPDATE`](update.html) followed by the table nam
 (6 rows)
 ~~~
 
-If a table has a primary key, you can use that in the `WHERE` clause to reliably update specific rows; otherwise, each row matching the `WHERE` clause is updated. When there's no `WHERE` clause, all rows in the table are updated.
+테이블에 기본 키가있는 경우,`WHERE` 절에서 그것을 사용하여 특정 행을 확실하게 업데이트 할 수 있습니다. 그렇지 않은 경우,`WHERE` 절과 일치하는 행이 업데이트됩니다. `WHERE` 절이 없으면 테이블의 모든 행이 업데이트 됩니다.
 
-## Delete rows in a table
+## 테이블에 행 지우기
 
-To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the table name and a `WHERE` clause identifying the rows to delete:
+테이블에서 행을 지우기 위해선 [`DELETE FROM`](delete.html) 명령어를 사용하고 그 뒤에 테이블 이름을 쓰고 그 뒤에 또 지울 행을 확인해주는 절인 `WHERE`를 써주시면 됩니다:
 
 {% include copy-clipboard.html %}
 ~~~ sql
@@ -372,13 +372,14 @@ To delete rows from a table, use [`DELETE FROM`](delete.html) followed by the ta
 (4 rows)
 ~~~
 
-Just as with the `UPDATE` statement, if a table has a primary key, you can use that in the `WHERE` clause to reliably delete specific rows; otherwise, each row matching the `WHERE` clause is deleted. When there's no `WHERE` clause, all rows in the table are deleted.
+`UPDATE` 문과 마찬가지로 테이블에 기본 키가있는 경우,`WHERE` 절에서 그것을 사용하여 특정 행을 확실하게 삭제할 수 있습니다. 그렇지 않은 경우,`WHERE` 절과 일치하는 행이 삭제됩니다. `WHERE`절이 없으면 테이블의 모든 행이 삭제됩니다.
+
 
 {% unless site.managed %}
-## What's next?
+## 그래서 다음은요?
 
-- Explore all [SQL Statements](sql-statements.html)
-- [Use the built-in SQL client](use-the-built-in-sql-client.html) to execute statements from a shell or directly from the command line
-- [Install the client driver](install-client-drivers.html) for your preferred language and [build an app](build-an-app-with-cockroachdb.html)
-- [Explore core CockroachDB features](demo-data-replication.html) like automatic replication, rebalancing, and fault tolerance
+- 모든 [SQL Statements](sql-statements.html)를 알아보아요.
+- 쉘에서 또는 커맨드 라인에서 직접 [built-in SQL client](use-the-built-in-sql-client.html)를 사용해봅시다. 
+- [Install the client driver](install-client-drivers.html)에서는 원하는 언어로 그리고 [build an app](build-an-app-with-cockroachdb.html)을 해보아요.
+- [core CockroachDB features](demo-data-replication.html)에 대해 알아보아요. 예를 들어 automatic replication, rebalancing, and fault tolerance
 {% endunless %}
